@@ -1,0 +1,902 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+	:root {
+		--gs-ink: #0f172a;
+		--gs-accent: #0ea5e9;
+		--gs-accent-strong: #0284c7;
+	}
+
+	body {
+		font-family: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+		background: #f5f6fb;
+		color: var(--gs-ink);
+	}
+
+	h1, h2, h3, h4 {
+		font-family: "IBM Plex Serif", ui-serif, Georgia, serif;
+	}
+
+	/* Hide default Edge/IE reveal password icon to prevent overlapping with custom toggle button */
+	input[type="password"]::-ms-reveal,
+	input[type="password"]::-ms-clear {
+		display: none;
+	}
+}
+
+@layer components {
+	.gs-card {
+		@apply bg-white shadow-md shadow-slate-200/70 border border-slate-100 rounded-2xl;
+	}
+
+	.gs-section {
+		@apply py-12;
+	}
+
+	.gs-section--tight {
+		@apply py-8;
+	}
+
+	.gs-section--alt {
+		@apply bg-white;
+	}
+
+	.gs-nav {
+		@apply sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur;
+	}
+
+	.gs-topbar {
+		@apply border-b border-slate-900 bg-slate-900 text-white;
+	}
+
+	.gs-chip {
+		@apply inline-flex items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-semibold tracking-wide uppercase text-sky-700;
+	}
+
+	.gs-button {
+		@apply inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold transition;
+		background: linear-gradient(120deg, var(--gs-accent), #38bdf8);
+		color: white;
+	}
+
+	.gs-button:hover {
+		background: linear-gradient(120deg, var(--gs-accent-strong), var(--gs-accent));
+	}
+
+	.gs-button--ghost {
+		@apply border border-sky-200 bg-white text-sky-700;
+	}
+
+	.gs-button--small {
+		@apply rounded-full px-4 py-2 text-xs;
+	}
+
+	.gs-article-title {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		line-height: 1.35;
+		min-height: 2.7em;
+	}
+
+	.gs-article-excerpt {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 4;
+		overflow: hidden;
+		line-height: 1.7;
+		min-height: 6.8em;
+	}
+
+	.gs-article-card {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.gs-search {
+		@apply flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm;
+	}
+
+	.gs-search-input {
+		@apply w-56 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400;
+		border: 0;
+	}
+
+	.gs-search-button {
+		@apply rounded-full bg-sky-600 px-3 py-1 text-xs font-semibold text-white;
+	}
+
+	.gs-icon-button {
+		@apply inline-flex items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition;
+	}
+
+	.gs-icon-button:hover {
+		@apply text-slate-900;
+	}
+
+	.gs-slider {
+		@apply relative w-full overflow-hidden rounded-3xl;
+	}
+
+	/* Allow sliders marked as detail to show controls outside the container */
+	.gs-slider--detail {
+		overflow: visible !important;
+	}
+
+	/* Hide full add-to-cart form inside related-products slider to avoid repeated forms */
+	.gs-slider--detail .gs-product-actions {
+		display: none;
+	}
+
+	/* Viewport to clip slides while allowing outer slider to display controls outside */
+	.gs-slider-viewport {
+		overflow: hidden;
+		width: 100%;
+	}
+
+	/* For product detail slider: place arrows anchored just outside the cards like design */
+	.gs-slider--detail .gs-slider-controls {
+		pointer-events: none;
+	}
+
+	.gs-slider--detail .gs-slider-controls [data-slider-prev],
+	.gs-slider--detail .gs-slider-controls [data-slider-next] {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		pointer-events: auto;
+		width: 48px;
+		height: 48px;
+		border-radius: 9999px;
+		background: white;
+		box-shadow: 0 8px 24px rgba(15,23,42,0.12);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 140;
+	}
+
+	.gs-slider--detail .gs-slider-controls [data-slider-prev] {
+		left: -56px; /* sit outside the card */
+	}
+
+	.gs-slider--detail .gs-slider-controls [data-slider-next] {
+		right: -56px; /* sit outside the card */
+	}
+
+	@media (max-width: 767px) {
+		.gs-slider--detail .gs-slider-controls [data-slider-prev] { left: -28px; }
+		.gs-slider--detail .gs-slider-controls [data-slider-next] { right: -28px; }
+	}
+
+	.gs-slider--products {
+		height: 420px;
+	}
+
+	.gs-product-slider-shell {
+		position: relative;
+		overflow: visible;
+		padding-inline: 1.5rem;
+	}
+
+	.gs-product-slider-controls {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		pointer-events: none;
+		padding-inline: 0;
+	}
+
+	.gs-product-slider-arrow {
+		position: relative;
+		pointer-events: auto;
+		z-index: 20;
+		transform: none;
+	}
+
+	.gs-product-slider-arrow-prev {
+		margin-left: -1.5rem;
+	}
+
+	.gs-product-slider-arrow-next {
+		margin-right: -1.5rem;
+	}
+
+	.gs-slider--hero {
+		@apply shadow-xl shadow-slate-200/60;
+		height: 28rem;
+	}
+
+	.gs-slider-track {
+		display: flex;
+		width: 100%;
+		height: 100%;
+		transition: transform 600ms ease;
+		will-change: transform;
+	}
+
+	.gs-slide {
+		min-width: 100%;
+		padding-right: 1.5rem;
+		height: 100%;
+	}
+
+	.gs-slider--hero .gs-slide {
+		padding-right: 0;
+		flex: 0 0 100%;
+		height: 100%;
+	}
+
+	.gs-kicker {
+		@apply text-xs uppercase tracking-[0.3em] text-sky-400;
+	}
+
+	.gs-hero-title {
+		@apply mt-3 text-3xl font-semibold text-white sm:text-4xl;
+	}
+
+	.gs-hero-subtitle {
+		@apply mt-3 text-base text-white/90;
+	}
+
+	.gs-hero-image {
+		@apply w-full h-full object-cover;
+		display: block;
+		border-radius: 1.25rem;
+		overflow: hidden;
+	}
+
+	.gs-hero-full {
+		@apply bg-white;
+	}
+
+	.gs-hero-banner {
+		@apply relative w-full overflow-hidden rounded-3xl;
+	}
+
+	.gs-hero-banner--full {
+		@apply rounded-3xl;
+	}
+
+	.gs-hero-overlay {
+		@apply pointer-events-none absolute inset-0 flex max-w-lg flex-col justify-center bg-gradient-to-r from-slate-900/85 via-slate-900/35 to-transparent p-6;
+		/* Allow interactive controls inside overlay (buttons/links) while keeping overlay non-interactive otherwise */
+		pointer-events: none;
+		padding-left: 4rem;
+	}
+
+	.gs-hero-overlay a,
+	.gs-hero-overlay button,
+	.gs-hero-overlay .gs-button {
+		pointer-events: auto;
+	}
+
+	@media (max-width: 640px) {
+		.gs-hero-overlay { padding-left: 1.5rem; }
+	}
+
+	.gs-promo-strip {
+		@apply flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-white px-6 py-5 shadow-sm;
+	}
+
+	.gs-promo-title {
+		@apply text-lg font-semibold text-slate-900;
+	}
+
+	.gs-promo-text {
+		@apply mt-1 text-sm text-slate-500;
+	}
+
+	.gs-side-banner {
+		@apply relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-md shadow-slate-200/70;
+	}
+
+	.gs-side-banner-label {
+		@apply absolute bottom-3 left-3 rounded-full bg-sky-600 px-3 py-1 text-xs font-semibold text-white;
+	}
+
+	.gs-category-card {
+		@apply relative block overflow-hidden rounded-2xl shadow-md shadow-slate-200/70;
+	}
+
+	.gs-category-overlay {
+		@apply absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/20 to-transparent;
+	}
+
+	.gs-category-meta {
+		@apply absolute bottom-4 left-4;
+	}
+
+	.gs-service-card {
+		@apply rounded-2xl border border-slate-100 bg-white px-5 py-4 text-center shadow-sm;
+	}
+
+	.gs-service-title {
+		@apply text-sm font-semibold text-slate-900;
+	}
+
+	.gs-service-text {
+		@apply mt-1 text-xs text-slate-500;
+	}
+
+	.gs-section-kicker {
+		@apply text-xs uppercase tracking-[0.3em] text-sky-500;
+	}
+
+	.gs-section-title {
+		@apply mt-2 text-2xl font-semibold text-slate-900;
+	}
+
+	.gs-collection-card {
+		@apply relative overflow-hidden rounded-2xl bg-slate-900 shadow-lg shadow-slate-200/70;
+	}
+
+	.gs-collection-overlay {
+		@apply absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent;
+	}
+
+	.gs-collection-meta {
+		@apply absolute bottom-4 left-4 z-10;
+	}
+
+	.gs-filter-chip {
+		@apply inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition;
+	}
+
+	.gs-filter-chip:hover {
+		@apply border-slate-300 text-slate-900;
+	}
+
+	.gs-filter-pill {
+		@apply inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white;
+	}
+
+	.gs-product-card {
+		@apply flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-md shadow-slate-200/70 transition;
+		height: 420px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.gs-section-header {
+		@apply flex flex-wrap items-center justify-between gap-4;
+	}
+
+	.gs-title {
+		@apply flex items-center gap-3;
+	}
+
+	.gs-title-icon {
+		@apply inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-lg;
+	}
+
+	.gs-link {
+		@apply inline-flex items-center rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-600 transition;
+	}
+
+	.gs-link:hover {
+		@apply border-sky-300 text-sky-900;
+	}
+
+	.gs-footer {
+		@apply mt-16 bg-slate-900 text-white;
+	}
+
+	.gs-footer-title {
+		@apply text-sm font-semibold uppercase tracking-widest text-white;
+	}
+
+	.gs-footer-link {
+		@apply text-slate-300 transition;
+	}
+
+	.gs-footer-link:hover {
+		@apply text-white;
+	}
+
+	.gs-footer-badge {
+		@apply rounded-full border border-slate-700/60 px-3 py-1 text-xs text-slate-200;
+	}
+
+	.gs-auth-shell {
+		@apply min-h-screen bg-white;
+	}
+
+	.gs-auth-grid {
+		@apply grid gap-8 lg:grid-cols-[1.1fr_1fr];
+	}
+
+	.gs-auth-panel {
+		@apply rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-xl shadow-slate-200/70;
+	}
+
+	.gs-auth-kicker {
+		@apply text-xs uppercase tracking-[0.3em] text-sky-500;
+	}
+
+	.gs-auth-title {
+		@apply mt-3 text-3xl font-semibold text-slate-900;
+	}
+
+	.gs-auth-subtitle {
+		@apply mt-3 text-base text-slate-600;
+	}
+
+	.gs-auth-list {
+		@apply mt-6 space-y-4 text-sm text-slate-600;
+	}
+
+	.gs-auth-item-title {
+		@apply block font-semibold text-slate-900;
+	}
+
+	.gs-auth-item-text {
+		@apply mt-1 block text-slate-500;
+	}
+
+	.gs-auth-form {
+		@apply rounded-3xl border border-slate-100 bg-white p-8 shadow-xl shadow-slate-200/70;
+	}
+
+	.gs-auth-input {
+		@apply rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-sky-400 focus:ring-sky-200;
+	}
+
+	.gs-auth-link {
+		@apply text-sm font-semibold text-sky-700 transition;
+	}
+
+	.gs-auth-link:hover {
+		@apply text-sky-900;
+	}
+
+	.gs-auth-button {
+		@apply rounded-full bg-sky-600 px-6 py-2 text-sm font-semibold text-white hover:bg-sky-700;
+	}
+
+	.gs-slider-dots {
+		@apply pointer-events-auto absolute bottom-4 flex items-center gap-2;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 60;
+	}
+
+	.gs-dot {
+		@apply pointer-events-auto h-2 w-2 rounded-full bg-white/60;
+	}
+
+	.gs-dot.is-active {
+		@apply w-6 bg-white;
+	}
+
+	.gs-slider-controls {
+		@apply pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3;
+	}
+
+	.gs-slider-button {
+		pointer-events: auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: #ffffff;
+		color: #0f172a; /* slate-900-ish */
+		font-size: 18px;
+		box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+		transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+		border: 0;
+	}
+
+	.gs-slider-button:hover {
+		@apply text-slate-900;
+	}
+
+	.gs-slider--products .gs-slider-controls {
+		left: 0;
+		right: 0;
+		/* controls padding defines the gutter; we expose it as a CSS variable so buttons can center in the middle of the whitespace */
+		--gs-slider-controls-padding: 1.5rem; /* base increased */
+		padding-left: var(--gs-slider-controls-padding);
+		padding-right: var(--gs-slider-controls-padding);
+		z-index: 5;
+	}
+
+	/* Hide manual controls for product sliders that live inside the product list shell (home sections) */
+	.gs-product-slider-shell .gs-slider-controls {
+		display: none !important;
+	}
+
+	/* Product-detail and other product sliders: position controls outside the slide area so they don't overlap slides */
+	.gs-slider--products {
+		position: relative;
+		--gs-slider-controls-padding: 4rem; /* default gutter used to offset buttons */
+	}
+
+	.gs-slider--products .gs-slider-controls {
+		position: absolute;
+		top: 50%;
+		left: 0;
+		right: 0;
+		transform: translateY(-50%);
+		pointer-events: none; /* allow buttons themselves to receive events */
+		z-index: 20;
+	}
+
+	.gs-slider--products .gs-slider-controls .gs-slider-button {
+		pointer-events: auto;
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 30;
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: #ffffff;
+		box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 18px;
+		border: 0;
+	}
+
+	/* Offset arrows outside the slide area using the gutter variable so they never sit on top of slides */
+	/* Position arrows completely outside the slider box using translateX so they don't overlap slides.
+	   Using left:0/right:0 as anchors and translating them outward ensures consistent placement
+	   regardless of gutter/padding values. */
+	/* Larger offsets so arrows sit well outside slides; responsive adjustments */
+	.gs-slider--products .gs-slider-controls [data-slider-prev] {
+		left: 0;
+		transform: translate(-200px, -50%); /* desktop: push further outside */
+		z-index: 140;
+	}
+
+	.gs-slider--products .gs-slider-controls [data-slider-next] {
+		right: 0;
+		transform: translate(200px, -50%); /* desktop: push further outside */
+		z-index: 140;
+	}
+
+@media (max-width: 767px) {
+    .gs-slider--products .gs-slider-controls [data-slider-prev] {
+        transform: translate(-80px, -50%); /* smaller offset on mobile */
+    }
+    .gs-slider--products .gs-slider-controls [data-slider-next] {
+        transform: translate(80px, -50%); /* smaller offset on mobile */
+    }
+}
+
+@media (min-width: 768px) {
+    .gs-slider--products { --gs-slider-controls-padding: 5rem; }
+}
+
+	.gs-slider-pager {
+		@apply pointer-events-auto mt-4 flex justify-center gap-2;
+		z-index: 60; /* bring pager above other controls/overlays */
+	}
+
+	.gs-slider-pager--products {
+		@apply mt-5 mb-2;
+	}
+
+	.gs-slider-pager-dot {
+		@apply h-2 w-2 rounded-full bg-slate-300 transition-all duration-150 inline-flex items-center justify-center;
+		padding: 6px; /* increase hit area while keeping visual size */
+		cursor: pointer;
+		border: 0;
+		position: relative;
+		z-index: 30;
+		pointer-events: auto;
+	}
+
+	.gs-slider-pager-dot.is-active {
+		@apply w-6 bg-sky-600;
+	}
+
+	/* Position buttons in the horizontal center of the gutter (half of controls padding) */
+	.gs-slider--products .gs-slider-button {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		pointer-events: auto;
+		z-index: 15;
+	}
+
+	/* Make article slider arrows visually match product slider arrows (scoped to articles only) */
+	.gs-slider--articles .gs-slider-button {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		pointer-events: auto;
+		z-index: 15;
+		height: 44px;
+		width: 44px;
+		border-radius: 9999px;
+		background: white;
+		box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.1rem;
+	}
+
+	/* Place article arrows in the gutter (half of controls padding) so they sit outside slides */
+	.gs-slider--articles .gs-slider-button[data-slider-prev],
+	.gs-slider--articles .gs-slider-button[data-slider-next] {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		pointer-events: auto;
+		z-index: 20;
+	}
+
+	/* Place arrows fully outside slide area using negative offset from the gutter */
+	.gs-slider--articles .gs-slider-button[data-slider-prev] {
+		left: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important;
+	}
+
+	.gs-slider--articles .gs-slider-button[data-slider-next] {
+		right: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important;
+	}
+
+	@media (min-width: 640px) {
+		.gs-slider--articles { --gs-slider-controls-padding: 2.25rem; }
+		.gs-slider--articles .gs-slider-button[data-slider-prev] { left: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important; }
+		.gs-slider--articles .gs-slider-button[data-slider-next] { right: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important; }
+	}
+
+	@media (min-width: 768px) {
+		.gs-slider--articles { --gs-slider-controls-padding: 4rem; }
+		.gs-slider--articles .gs-slider-button[data-slider-prev] { left: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important; }
+		.gs-slider--articles .gs-slider-button[data-slider-next] { right: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important; }
+	}
+
+	@media (min-width: 1024px) {
+		.gs-slider--articles { --gs-slider-controls-padding: 5rem; }
+		.gs-slider--articles .gs-slider-button[data-slider-prev] { left: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important; }
+		.gs-slider--articles .gs-slider-button[data-slider-next] { right: calc(-1 * var(--gs-slider-controls-padding) - 12px) !important; }
+	}
+	/* Fixed offsets to guarantee both buttons are visible */
+	.gs-slider--products .gs-slider-button[data-slider-prev] {
+		left: 24px !important;
+	}
+	.gs-slider--products .gs-slider-button[data-slider-next] {
+		right: 24px !important;
+	}
+
+	.gs-slider--products {
+		padding-bottom: 2.5rem;
+	}
+
+	@media (min-width: 640px) {
+		.gs-slider--products .gs-slider-controls {
+			--gs-slider-controls-padding: 2.25rem; /* sm increased */
+			padding-left: var(--gs-slider-controls-padding);
+			padding-right: var(--gs-slider-controls-padding);
+		}
+	}
+
+	@media (min-width: 768px) {
+		.gs-slider--products .gs-slider-button[data-slider-prev] {
+			left: 48px !important;
+		}
+		.gs-slider--products .gs-slider-button[data-slider-next] {
+			right: 48px !important;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.gs-slider--products .gs-slider-button[data-slider-prev] {
+			left: 64px !important;
+		}
+		.gs-slider--products .gs-slider-button[data-slider-next] {
+			right: 64px !important;
+		}
+	}
+
+	@media (min-width: 768px) {
+		.gs-slider--products .gs-slider-controls {
+			--gs-slider-controls-padding: 4rem; /* md increased */
+			padding-left: var(--gs-slider-controls-padding);
+			padding-right: var(--gs-slider-controls-padding);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.gs-slider--products .gs-slider-controls {
+			--gs-slider-controls-padding: 5rem; /* lg increased further so buttons sit clearly in whitespace */
+			padding-left: var(--gs-slider-controls-padding);
+			padding-right: var(--gs-slider-controls-padding);
+		}
+	}
+
+	/* Keep article/news slider arrows at the original default position. */
+	.gs-slider--articles .gs-slider-controls {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		pointer-events: none;
+		padding-left: 1.5rem;
+		padding-right: 1.5rem;
+		z-index: 8;
+	}
+
+	/* Position article slider arrows outside the card area and make them clickable */
+	.gs-slider--articles .gs-slider-controls .gs-slider-button {
+		pointer-events: auto;
+		z-index: 20;
+	}
+
+	.gs-slider--articles .gs-slider-controls [data-slider-prev] {
+		margin-left: -1.25rem;
+	}
+
+	.gs-slider--articles .gs-slider-controls [data-slider-next] {
+		margin-right: -1.25rem;
+	}
+
+	.gs-hero-controls {
+		@apply pointer-events-none absolute left-0 right-0 top-1/2 z-40 flex -translate-y-1/2 items-center justify-between px-4;
+		transform: translateY(-50%) translateX(0);
+	}
+
+	@media (min-width: 640px) {
+		.gs-hero-controls {
+			@apply px-6;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.gs-hero-controls {
+			@apply px-8;
+		}
+	}
+
+	.gs-hero-button {
+		@apply pointer-events-auto relative z-50 inline-flex h-12 w-12 items-center justify-center rounded-full text-slate-900 shadow-xl transition duration-300;
+		font-size: 1.5rem;
+		font-weight: 300;
+		line-height: 1;
+		background: rgba(255,255,255,0.92);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+		border: 1px solid rgba(255,255,255,0.65);
+	}
+
+	.gs-hero-button:hover {
+		@apply bg-white shadow-xl transform scale-110;
+	}
+
+	.gs-hero-button-prev,
+	.gs-hero-button-next {
+		@apply cursor-pointer;
+	}
+
+	/* Move hero buttons slightly outside the content so they don't cover text */
+	.gs-hero-button-prev { margin-left: -2rem; }
+	.gs-hero-button-next { margin-right: -2rem; }
+
+	.gs-product-card:hover {
+		@apply -translate-y-1;
+	}
+
+	.gs-product-image {
+		@apply flex items-center justify-center bg-slate-50;
+		width: 100%;
+		height: 210px;
+		overflow: hidden;
+		flex-shrink: 0;
+	}
+
+	.gs-product-image img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		padding: 0.5rem;
+	}
+
+	/* ===== Hover image swap (fade-in ảnh phụ) ===== */
+	.gs-product-image--hoverable {
+		position: relative;
+	}
+
+	/* Ảnh chính: giữ nguyên layout bình thường (không absolute) */
+	.gs-product-img--main {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		padding: 0.5rem;
+		opacity: 1;
+		transition: opacity 350ms ease;
+		position: relative;
+		z-index: 1;
+		display: block;
+	}
+
+	/* Ảnh phụ: absolute đè lên trên ảnh chính, ẩn mặc định */
+	.gs-product-img--hover {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		padding: 0.5rem;
+		opacity: 0;
+		transition: opacity 350ms ease;
+		z-index: 2;
+	}
+
+	/* Hover trên desktop */
+	.gs-product-image--hoverable:hover .gs-product-img--hover {
+		opacity: 1;
+	}
+
+	.gs-product-image--hoverable:hover .gs-product-img--main {
+		opacity: 0;
+	}
+
+	/* Touch trên mobile (class thêm bằng JS) */
+	.gs-product-image--hoverable.is-touched .gs-product-img--hover {
+		opacity: 1;
+	}
+
+	.gs-product-image--hoverable.is-touched .gs-product-img--main {
+		opacity: 0;
+	}
+	/* ===== End hover image swap ===== */
+
+	.gs-product-body {
+		@apply p-5;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		min-height: 120px;
+	}
+
+	.gs-slider--products .gs-slide {
+		min-width: 100%;
+		flex: 0 0 100%;
+		height: 100%;
+		display: flex;
+	}
+
+	@media (min-width: 768px) {
+		.gs-slide {
+			min-width: 50%;
+		}
+
+		.gs-slider--products .gs-slide {
+			min-width: 50%;
+			flex: 0 0 50%;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.gs-slide { min-width: 25%; }
+		.gs-slider--products .gs-slide {
+			min-width: 25%;
+			flex: 0 0 25%;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.gs-slide {
+			min-width: 33.3333%;
+		}
+
+		.gs-slider--products .gs-slide {
+			min-width: 25%;
+			flex: 0 0 25%;
+		}
+	}
+}
