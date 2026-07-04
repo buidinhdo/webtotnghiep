@@ -1,4 +1,4 @@
-@props(['product', 'showLoginCta' => true, 'showRemoveWishlist' => false])
+@props(['product', 'showLoginCta' => true, 'showRemoveWishlist' => false, 'showWishlist' => true])
 
 @php
     use Illuminate\Support\Str;
@@ -14,28 +14,30 @@
 @endphp
 
 <div class="gs-product-card relative">
-    @auth
-        <form method="POST" action="{{ route('wishlist.toggle', $product) }}" class="absolute top-3 right-3 z-10">
-            @csrf
-            <button type="submit" class="p-2 rounded-full bg-white/85 hover:bg-white text-rose-500 hover:text-rose-600 shadow transition-all duration-300 transform hover:scale-110 flex items-center justify-center focus:outline-none" title="{{ auth()->user()->wishlist()->where('product_id', $product->id)->exists() ? __('ui.remove_from_wishlist') : __('ui.add_to_wishlist') }}">
-                @if(auth()->user()->wishlist()->where('product_id', $product->id)->exists())
-                    <svg class="h-4 w-4 fill-rose-500 text-rose-500" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                    </svg>
-                @else
-                    <svg class="h-4 w-4 text-slate-400 hover:text-rose-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                    </svg>
-                @endif
-            </button>
-        </form>
-    @else
-        <a href="{{ route('login') }}" class="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/85 hover:bg-white text-slate-400 hover:text-rose-500 shadow transition-all duration-300 transform hover:scale-110 flex items-center justify-center" title="{{ __('ui.add_to_wishlist') }}">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-            </svg>
-        </a>
-    @endauth
+    @if($showWishlist)
+        @auth
+            <form method="POST" action="{{ route('wishlist.toggle', $product) }}" class="absolute top-3 right-3 z-10">
+                @csrf
+                <button type="submit" class="p-2 rounded-full bg-white/85 hover:bg-white text-rose-500 hover:text-rose-600 shadow transition-all duration-300 transform hover:scale-110 flex items-center justify-center focus:outline-none" title="{{ auth()->user()->wishlist()->where('product_id', $product->id)->exists() ? __('ui.remove_from_wishlist') : __('ui.add_to_wishlist') }}">
+                    @if(auth()->user()->wishlist()->where('product_id', $product->id)->exists())
+                        <svg class="h-4 w-4 fill-rose-500 text-rose-500" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                        </svg>
+                    @else
+                        <svg class="h-4 w-4 text-slate-400 hover:text-rose-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                        </svg>
+                    @endif
+                </button>
+            </form>
+        @else
+            <a href="{{ route('login') }}" class="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/85 hover:bg-white text-slate-400 hover:text-rose-500 shadow transition-all duration-300 transform hover:scale-110 flex items-center justify-center" title="{{ __('ui.add_to_wishlist') }}">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+            </a>
+        @endauth
+    @endif
 
     <a href="{{ route('products.show', $product) }}" class="gs-product-image gs-product-image--hoverable">
         {{-- Ảnh chính --}}

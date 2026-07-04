@@ -57,7 +57,7 @@
             <div class="gs-slider-track" data-slider-track>
                 @forelse ($latest as $product)
                     <div class="gs-slide">
-                        <x-product-card :product="$product" :show-login-cta="false" />
+                        <x-product-card :product="$product" :show-login-cta="false" :show-wishlist="false" />
                     </div>
                 @empty
                     <div class="gs-slide">
@@ -90,7 +90,7 @@
             <div class="gs-slider-track" data-slider-track>
                 @forelse ($featured as $product)
                     <div class="gs-slide">
-                        <x-product-card :product="$product" :show-login-cta="false" />
+                        <x-product-card :product="$product" :show-login-cta="false" :show-wishlist="false" />
                     </div>
                 @empty
                     <div class="gs-slide">
@@ -123,7 +123,7 @@
             <div class="gs-slider-track" data-slider-track>
                 @forelse ($ps4 as $product)
                     <div class="gs-slide">
-                        <x-product-card :product="$product" :show-login-cta="false" />
+                        <x-product-card :product="$product" :show-login-cta="false" :show-wishlist="false" />
                     </div>
                 @empty
                     <div class="gs-slide">
@@ -156,7 +156,7 @@
             <div class="gs-slider-track" data-slider-track>
                 @forelse ($ps5 as $product)
                     <div class="gs-slide">
-                        <x-product-card :product="$product" :show-login-cta="false" />
+                        <x-product-card :product="$product" :show-login-cta="false" :show-wishlist="false" />
                     </div>
                 @empty
                     <div class="gs-slide">
@@ -189,7 +189,7 @@
             <div class="gs-slider-track" data-slider-track>
                 @forelse ($switch as $product)
                     <div class="gs-slide">
-                        <x-product-card :product="$product" :show-login-cta="false" />
+                        <x-product-card :product="$product" :show-login-cta="false" :show-wishlist="false" />
                     </div>
                 @empty
                     <div class="gs-slide">
