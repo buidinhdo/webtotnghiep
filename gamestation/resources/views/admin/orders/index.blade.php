@@ -39,6 +39,7 @@
                     <option value="">-- PTTT --</option>
                     <option value="cod" {{ request('payment_method') === 'cod' ? 'selected' : '' }}>COD</option>
                     <option value="card" {{ request('payment_method') === 'card' ? 'selected' : '' }}>Tiền mặt</option>
+                    <option value="credit_card" {{ request('payment_method') === 'credit_card' ? 'selected' : '' }}>Thẻ tín dụng</option>
                 </select>
             </div>
             <div class="col-md-3 mb-2">

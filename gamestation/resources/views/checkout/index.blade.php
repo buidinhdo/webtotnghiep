@@ -81,6 +81,7 @@
                                 <option value="">-- Chọn phương thức --</option>
                                 <option value="cod" {{ old('payment_method') == 'cod' ? 'selected' : '' }}>Thanh toán khi nhận hàng (COD)</option>
                                 <option value="card" {{ old('payment_method') == 'card' ? 'selected' : '' }}>Tiền mặt</option>
+                                <option value="credit_card" {{ old('payment_method') == 'credit_card' ? 'selected' : '' }}>Thẻ tín dụng</option>
                             </select>
                             @error('payment_method')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
                         </div>

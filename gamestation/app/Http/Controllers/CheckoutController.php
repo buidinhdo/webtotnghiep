@@ -161,6 +161,57 @@ class CheckoutController extends Controller
             return $order;
         });
 
+        if ($order->payment_method === 'credit_card') {
+            $vnp_Url = config('vnpay.vnp_Url');
+            $vnp_Returnurl = config('vnpay.vnp_ReturnUrl');
+            $vnp_TmnCode = config('vnpay.vnp_TmnCode');
+            $vnp_HashSecret = config('vnpay.vnp_HashSecret');
+
+            $vnp_TxnRef = $order->id;
+            $vnp_OrderInfo = "Thanh toan don hang #" . $order->id;
+            $vnp_OrderType = 'billpayment';
+            $vnp_Amount = (int)($order->total * 100);
+            $vnp_Locale = 'vn';
+            $vnp_IpAddr = $request->ip();
+
+            $inputData = [
+                "vnp_Version" => "2.1.0",
+                "vnp_TmnCode" => $vnp_TmnCode,
+                "vnp_Amount" => $vnp_Amount,
+                "vnp_Command" => "pay",
+                "vnp_CreateDate" => date('YmdHis'),
+                "vnp_CurrCode" => "VND",
+                "vnp_IpAddr" => $vnp_IpAddr,
+                "vnp_Locale" => $vnp_Locale,
+                "vnp_OrderInfo" => $vnp_OrderInfo,
+                "vnp_OrderType" => $vnp_OrderType,
+                "vnp_ReturnUrl" => $vnp_Returnurl,
+                "vnp_TxnRef" => $vnp_TxnRef,
+            ];
+
+            ksort($inputData);
+            $query = "";
+            $i = 0;
+            $hashdata = "";
+            foreach ($inputData as $key => $value) {
+                if ($i == 1) {
+                    $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+                } else {
+                    $hashdata .= urlencode($key) . "=" . urlencode($value);
+                    $i = 1;
+                }
+                $query .= urlencode($key) . "=" . urlencode($value) . '&';
+            }
+
+            $vnp_Url = $vnp_Url . "?" . $query;
+            if (isset($vnp_HashSecret)) {
+                $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+                $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+            }
+
+            return redirect()->away($vnp_Url);
+        }
+
         return redirect()->route('orders.show', $order)->with('success', 'Đặt hàng thành công.');
     }
 
@@ -376,7 +427,7 @@ class CheckoutController extends Controller
 
     private function calculateShippingFee(string $province, string $district, string $ward, ?Coupon $coupon, string $shippingMethod, ?string $paymentMethod = ''): float
     {
-        if ($paymentMethod === 'card') {
+        if ($paymentMethod === 'card' || $paymentMethod === 'credit_card') {
             return 0.0;
         }
 
@@ -493,5 +544,156 @@ class CheckoutController extends Controller
         }
 
         return 'central'; // Default fallback
+    }
+
+    public function vnpayReturn(Request $request)
+    {
+        $vnp_HashSecret = config('vnpay.vnp_HashSecret');
+        $vnp_SecureHash = $request->input('vnp_SecureHash');
+        
+        $inputData = [];
+        foreach ($request->all() as $key => $value) {
+            if (substr($key, 0, 4) == "vnp_") {
+                $inputData[$key] = $value;
+            }
+        }
+        
+        unset($inputData['vnp_SecureHash']);
+        ksort($inputData);
+        
+        $i = 0;
+        $hashData = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+        
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+        $orderId = $request->input('vnp_TxnRef');
+        $order = Order::find($orderId);
+
+        if (!$order) {
+            return redirect()->route('products.index')->with('error', 'Đơn hàng không tồn tại.');
+        }
+
+        if ($secureHash === $vnp_SecureHash) {
+            $responseCode = $request->input('vnp_ResponseCode');
+            if ($responseCode === '00') {
+                $order->update([
+                    'payment_status' => 'paid',
+                    'status' => 'processing',
+                ]);
+
+                UserNotification::create([
+                    'user_id' => $order->user_id,
+                    'title' => 'Thanh toán đơn hàng thành công',
+                    'body' => "Đơn hàng #{$order->id} đã được thanh toán qua VNPay thành công.",
+                ]);
+
+                return redirect()->route('orders.show', $order)->with('success', 'Thanh toán đơn hàng qua VNPay thành công.');
+            } else {
+                $order->update([
+                    'payment_status' => 'failed',
+                ]);
+                return redirect()->route('orders.show', $order)->with('error', 'Giao dịch thanh toán qua VNPay thất bại.');
+            }
+        } else {
+            return redirect()->route('orders.show', $order)->with('error', 'Chữ ký giao dịch VNPay không hợp lệ.');
+        }
+    }
+
+    public function vnpayIpn(Request $request)
+    {
+        $vnp_HashSecret = config('vnpay.vnp_HashSecret');
+        $vnp_SecureHash = $request->input('vnp_SecureHash');
+        
+        $inputData = [];
+        foreach ($request->all() as $key => $value) {
+            if (substr($key, 0, 4) == "vnp_") {
+                $inputData[$key] = $value;
+            }
+        }
+        
+        unset($inputData['vnp_SecureHash']);
+        ksort($inputData);
+        
+        $i = 0;
+        $hashData = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+        
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+        
+        try {
+            $orderId = $request->input('vnp_TxnRef');
+            $order = Order::find($orderId);
+            
+            if (!$order) {
+                return response()->json([
+                    'RspCode' => '01',
+                    'Message' => 'Order not found'
+                ]);
+            }
+            
+            $vnp_Amount = $request->input('vnp_Amount') / 100;
+            if ($order->total != $vnp_Amount) {
+                return response()->json([
+                    'RspCode' => '04',
+                    'Message' => 'Invalid amount'
+                ]);
+            }
+            
+            if ($order->payment_status !== 'unpaid') {
+                return response()->json([
+                    'RspCode' => '02',
+                    'Message' => 'Order already confirmed'
+                ]);
+            }
+            
+            if ($secureHash === $vnp_SecureHash) {
+                $responseCode = $request->input('vnp_ResponseCode');
+                if ($responseCode === '00') {
+                    $order->update([
+                        'payment_status' => 'paid',
+                        'status' => 'processing',
+                    ]);
+
+                    UserNotification::create([
+                        'user_id' => $order->user_id,
+                        'title' => 'Thanh toán đơn hàng thành công (IPN)',
+                        'body' => "Đơn hàng #{$order->id} đã nhận xác nhận thanh toán qua VNPay.",
+                    ]);
+                } else {
+                    $order->update([
+                        'payment_status' => 'failed',
+                    ]);
+                }
+                
+                return response()->json([
+                    'RspCode' => '00',
+                    'Message' => 'Confirm success'
+                ]);
+            } else {
+                return response()->json([
+                    'RspCode' => '97',
+                    'Message' => 'Invalid signature'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'RspCode' => '99',
+                'Message' => 'Unknown error'
+            ]);
+        }
     }
 }

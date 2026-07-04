@@ -61,6 +61,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout/calculate-shipping', [CheckoutController::class, 'calculateShippingFeeApi'])->name('checkout.calculate-shipping');
     Route::post('/checkout', [CheckoutController::class, 'placeOrder'])->name('checkout.place');
+    Route::get('/checkout/vnpay-return', [CheckoutController::class, 'vnpayReturn'])->name('checkout.vnpay-return');
+    Route::any('/checkout/vnpay-ipn', [CheckoutController::class, 'vnpayIpn'])->name('checkout.vnpay-ipn');
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');

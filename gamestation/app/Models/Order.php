@@ -77,4 +77,15 @@ class Order extends Model
     {
         return self::PAYMENT_STATUS_LABELS[$this->payment_status] ?? ucfirst((string) $this->payment_status);
     }
+
+    private const PAYMENT_METHOD_LABELS = [
+        'cod' => 'Thanh toán khi nhận hàng (COD)',
+        'card' => 'Tiền mặt',
+        'credit_card' => 'Thẻ tín dụng',
+    ];
+
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        return self::PAYMENT_METHOD_LABELS[$this->payment_method] ?? (string) $this->payment_method;
+    }
 }

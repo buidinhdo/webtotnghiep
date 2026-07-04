@@ -38,66 +38,102 @@ class ChatbotController extends Controller
             'message' => $userMessageText,
         ]);
 
-        // 2. Detect query intent
         $lowerMessage = mb_strtolower($userMessageText);
-        $isPriceQuery = false;
-        $isLinkQuery = false;
-        $isStatusQuery = false;
-        $isPlatformQuery = false;
-        $isPublisherQuery = false;
-        $isDetailsQuery = false;
 
-        $priceKeywords = ['giá', 'bao nhiêu', 'nhiêu', 'tiền', 'đắt', 'rẻ', 'cost', 'price', 'how much'];
-        foreach ($priceKeywords as $pk) {
-            if (str_contains($lowerMessage, $pk)) {
-                $isPriceQuery = true;
+        // 2. Detect query intents for attributes
+        $requestedAttributes = [];
+        if (preg_match('/(?:giá|bao nhiêu|nhiêu|tiền|cost|price|how\s*much)/u', $lowerMessage)) {
+            $requestedAttributes['price'] = 'Giá';
+        }
+        if (preg_match('/(?:số lượng|còn hàng|hết hàng|còn không|tình trạng|tồn|kho|sẵn hàng|stock|quantity)/u', $lowerMessage)) {
+            $requestedAttributes['stock'] = 'Tình trạng';
+        }
+        if (preg_match('/(?:hệ máy|thiết bị|chơi trên|chơi bằng|platform|máy)/u', $lowerMessage)) {
+            $requestedAttributes['platform'] = 'Hệ máy';
+        }
+        if (preg_match('/(?:nhà phát hành|nhà sản xuất|hãng|publisher|sản xuất|phát hành)/u', $lowerMessage)) {
+            $requestedAttributes['publisher'] = 'Nhà phát hành';
+        }
+        if (preg_match('/(?:bảo hành|bh)/u', $lowerMessage)) {
+            $requestedAttributes['warranty'] = 'Bảo hành';
+        }
+        if (preg_match('/(?:phiên bản|dung lượng|gb|bản|version|capacity)/u', $lowerMessage)) {
+            $requestedAttributes['version'] = 'Phiên bản/Dung lượng';
+        }
+        if (preg_match('/(?:thể loại|dòng game|genre)/u', $lowerMessage)) {
+            $requestedAttributes['genre'] = 'Thể loại';
+        }
+        if (preg_match('/(?:ngày phát hành|ngày ra mắt|ra mắt khi nào|phát hành khi nào|ngày bán|release\s*date)/u', $lowerMessage)) {
+            $requestedAttributes['release_date'] = 'Ngày phát hành';
+        }
+
+        $showFullInfo = false;
+        if (str_contains($lowerMessage, 'toàn bộ thông tin') || str_contains($lowerMessage, 'tất cả thông tin') || str_contains($lowerMessage, 'thông tin đầy đủ') || str_contains($lowerMessage, 'full thông tin')) {
+            $showFullInfo = true;
+        }
+
+        // 3. Detect Filter/Search Query
+        $isPlatformFilter = false;
+        $filterPlatform = null;
+        if (preg_match('/(?:dành cho|cho|hệ máy|hệ)\s*(ps5|ps4|switch|nintendo switch|nintendo|playstation)/u', $lowerMessage, $matches)) {
+            $isPlatformFilter = true;
+            $filterPlatform = trim($matches[1]);
+            if ($filterPlatform === 'nintendo') {
+                $filterPlatform = 'switch';
+            }
+        }
+
+        $isPriceFilter = false;
+        $filterPriceMax = null;
+        $filterPriceMin = null;
+        if (preg_match('/(?:dưới|thấp hơn|nhỏ hơn|<=|<)\s*([\d\.,\s]+)\s*(triệu|tr|k|đ|vnd|đồng)?/u', $lowerMessage, $matches)) {
+            $isPriceFilter = true;
+            $valStr = preg_replace('/[^\d]/', '', $matches[1]);
+            $val = (float)$valStr;
+            $unit = isset($matches[2]) ? trim($matches[2]) : '';
+            if (str_contains($unit, 'triệu') || str_contains($unit, 'tr')) {
+                $val *= 1000000;
+            } elseif (str_contains($unit, 'k')) {
+                $val *= 1000;
+            } elseif ($val < 1000) {
+                if ($val < 10) {
+                    $val *= 1000000;
+                } else {
+                    $val *= 1000;
+                }
+            }
+            $filterPriceMax = $val;
+        } elseif (preg_match('/(?:trên|cao hơn|lớn hơn|>=|>)\s*([\d\.,\s]+)\s*(triệu|tr|k|đ|vnd|đồng)?/u', $lowerMessage, $matches)) {
+            $isPriceFilter = true;
+            $valStr = preg_replace('/[^\d]/', '', $matches[1]);
+            $val = (float)$valStr;
+            $unit = isset($matches[2]) ? trim($matches[2]) : '';
+            if (str_contains($unit, 'triệu') || str_contains($unit, 'tr')) {
+                $val *= 1000000;
+            } elseif (str_contains($unit, 'k')) {
+                $val *= 1000;
+            } elseif ($val < 1000) {
+                if ($val < 10) {
+                    $val *= 1000000;
+                } else {
+                    $val *= 1000;
+                }
+            }
+            $filterPriceMin = $val;
+        }
+
+        $isGenreFilter = false;
+        $filterGenre = null;
+        $genres = ['đua xe', 'hành động', 'nhập vai', 'bắn súng', 'thể thao', 'phiêu lưu', 'kinh dị', 'đối kháng', 'chiến thuật', 'fps', 'rpg', 'moba'];
+        foreach ($genres as $genre) {
+            if (str_contains($lowerMessage, $genre)) {
+                $isGenreFilter = true;
+                $filterGenre = $genre;
                 break;
             }
         }
 
-        $linkKeywords = ['link', 'đường dẫn', 'mua', 'order', 'đặt', 'xem'];
-        foreach ($linkKeywords as $lk) {
-            if (str_contains($lowerMessage, $lk)) {
-                $isLinkQuery = true;
-                break;
-            }
-        }
-
-        $statusKeywords = ['tình trạng', 'còn hàng', 'hết hàng', 'còn không', 'sẵn hàng', 'stock', 'tồn', 'ở kho', 'kho'];
-        foreach ($statusKeywords as $sk) {
-            if (str_contains($lowerMessage, $sk)) {
-                $isStatusQuery = true;
-                break;
-            }
-        }
-
-        $platformKeywords = ['hệ máy', 'thiết bị', 'chơi trên', 'chơi bằng', 'platform', 'switch', 'ps5', 'ps4'];
-        foreach ($platformKeywords as $plk) {
-            if (str_contains($lowerMessage, $plk)) {
-                $isPlatformQuery = true;
-                break;
-            }
-        }
-
-        $publisherKeywords = ['nhà phát hành', 'hãng', 'publisher', 'công ty', 'sản xuất'];
-        foreach ($publisherKeywords as $pbk) {
-            if (str_contains($lowerMessage, $pbk)) {
-                $isPublisherQuery = true;
-                break;
-            }
-        }
-
-        $detailsKeywords = ['mô tả', 'thông tin', 'chi tiết', 'cốt truyện', 'nội dung', 'review', 'giới thiệu'];
-        foreach ($detailsKeywords as $dk) {
-            if (str_contains($lowerMessage, $dk)) {
-                $isDetailsQuery = true;
-                break;
-            }
-        }
-
-        $isFollowUpQuery = $isPriceQuery || $isLinkQuery || $isStatusQuery || $isPlatformQuery || $isPublisherQuery || $isDetailsQuery;
-
-        // 3. Perform database search for matching products in the current message
+        // Clean user message for product keywords search
         $cleanString = preg_replace('/[^\p{L}\p{N}\s]/u', '', $lowerMessage);
         $tokens = array_filter(explode(' ', $cleanString));
         
@@ -108,14 +144,16 @@ class ChatbotController extends Controller
             'đĩa', 'máy', 'được', 'lấy', 'cho', 'ra', 'sao', 'này', 'kia', 'đó', 'ạ', 'ko', 'kg',
             'giá', 'bao', 'nhiêu', 'tiền', 'của', 'là', 'về', 'cái', 'nhé', 'nha', 'được', 
             'hộ', 'giúp', 'xin', 'báo', 'xem', 'biết', 'các', 'những', 'một', 'số', 'bản', 'hệ',
-            'tình', 'trạng', 'còn', 'hết', 'tin', 'tức', 'mô', 'tả', 'hệ', 'máy'
+            'tình', 'trạng', 'còn', 'hết', 'tin', 'tức', 'mô', 'tả', 'hệ', 'máy', 'nhà', 'phát', 'hành',
+            'thể', 'loại', 'ngày', 'ra', 'mắt', 'bảo', 'hành', 'dung', 'lượng', 'phiên', 'bản',
+            'dưới', 'trên', 'khoảng', 'triệu', 'đồng', 'tấn', 'loại'
         ];
 
         $keywords = array_filter($tokens, function ($token) use ($stopWords) {
             return !in_array($token, $stopWords) && mb_strlen($token) >= 2;
         });
 
-        $products = collect();
+        $matchedProducts = collect();
         if (!empty($keywords)) {
             $productsQuery = Product::with(['primaryImage', 'images', 'publisher'])
                 ->where('is_active', true);
@@ -127,80 +165,167 @@ class ChatbotController extends Controller
                 });
             }
             
-            $products = $productsQuery->take(5)->get();
+            $matchedProducts = $productsQuery->take(10)->get();
         }
 
-        // 4. If no products matched, but user is asking a follow-up or message is very short
-        // indicating interest in previously discussed product
-        if ($products->isEmpty() && ($isFollowUpQuery || mb_strlen($lowerMessage) < 25)) {
-            // Find last bot message to extract product IDs from urls
-            $lastBotMessage = ChatbotMessage::where('user_id', $user->id)
-                ->where('sender', 'bot')
-                ->latest()
-                ->first();
+        // Determine context product
+        $currentProduct = null;
 
-            if ($lastBotMessage) {
-                preg_match_all('/\/products\/(\d+)/', $lastBotMessage->message, $matches);
-                if (!empty($matches[1])) {
-                    $lastProductIds = array_unique($matches[1]);
-                    $products = Product::with(['primaryImage', 'images', 'publisher'])
-                        ->whereIn('id', $lastProductIds)
-                        ->where('is_active', true)
-                        ->get();
-                }
+        if ($matchedProducts->count() === 1) {
+            // Context switched to this matched product
+            $currentProduct = $matchedProducts->first();
+            session(['chatbot_current_product_id' => $currentProduct->id]);
+        } elseif ($matchedProducts->count() > 1) {
+            // Ambiguity found - ask user to clarify
+            $botReply = "Tôi tìm thấy một số sản phẩm liên quan đến yêu cầu của bạn:\n\n";
+            foreach ($matchedProducts as $index => $prod) {
+                $url = route('products.show', $prod);
+                $botReply .= ($index + 1) . ". **{$prod->name}** (" . strtoupper($prod->platform ?? 'N/A') . ") - [Xem chi tiết]({$url})\n";
             }
+            $botReply .= "\nBạn đang cần tư vấn cụ thể về sản phẩm nào dưới đây? Vui lòng cho tôi biết nhé!";
+
+            $botMessage = ChatbotMessage::create([
+                'user_id' => $user->id,
+                'sender' => 'bot',
+                'message' => $botReply,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'user_message' => $userMessage,
+                'bot_message' => $botMessage,
+            ]);
         }
 
-        // 5. Format bot response
-        if ($products->isNotEmpty()) {
-            if ($products->count() === 1) {
-                // Highly specific response for single product follow-up or focus
-                $product = $products->first();
-                $priceFormatted = number_format($product->price, 0, ',', '.') . 'đ';
-                $url = route('products.show', $product);
-                $statusText = $product->stock > 0 ? "Còn hàng (Số lượng còn: {$product->stock} đĩa)" : "Hết hàng";
-                $platform = strtoupper($product->platform ?? 'N/A');
-                $pubName = $product->publisher ? $product->publisher->name : 'N/A';
+        // If no products matched in current message, try to retrieve from context
+        if (!$currentProduct) {
+            $currentProduct = $this->getLastDiscussedProduct($user->id);
+        }
 
-                if ($isStatusQuery) {
-                    $botReply = "Sản phẩm **{$product->name}** hiện tại đang: **{$statusText}**.";
-                } elseif ($isPlatformQuery) {
-                    $botReply = "Sản phẩm **{$product->name}** dành cho hệ máy **{$platform}**.";
-                } elseif ($isPublisherQuery) {
-                    $botReply = "Sản phẩm **{$product->name}** được phát hành bởi hãng **{$pubName}**.";
-                } elseif ($isDetailsQuery) {
-                    $desc = $product->short_description ?: ($product->description ?: 'Không có mô tả chi tiết.');
-                    $botReply = "Thông tin chi tiết về game **{$product->name}**:\n\n🔹 **Cốt truyện/Mô tả**: " . \Illuminate\Support\Str::limit($desc, 300) . "\n\n🔗 [Xem trang chi tiết sản phẩm]({$url})";
-                } elseif ($isPriceQuery && $isLinkQuery) {
-                    $botReply = "Sản phẩm **{$product->name}** có giá là **{$priceFormatted}**.\n🔗 Bạn có thể xem chi tiết và đặt mua tại đây: [Xem sản phẩm]({$url})";
-                } elseif ($isPriceQuery) {
-                    $botReply = "Giá của sản phẩm **{$product->name}** là **{$priceFormatted}** bạn nhé.";
-                } elseif ($isLinkQuery) {
-                    $botReply = "Đây là đường dẫn chi tiết của sản phẩm **{$product->name}**:\n🔗 [Xem sản phẩm]({$url})";
-                } else {
-                    // Quick overview
-                    $botReply = "Thông tin về sản phẩm **{$product->name}** bạn đang hỏi:\n\n";
-                    $botReply .= "🔹 Giá: **{$priceFormatted}**\n";
-                    $botReply .= "🔹 Hệ máy: **{$platform}**\n";
-                    $botReply .= "🔹 Tình trạng: **{$statusText}**\n";
-                    $botReply .= "🔹 Nhà phát hành: **{$pubName}**\n\n";
-                    $botReply .= "🔗 [Xem chi tiết sản phẩm]({$url})";
+        // 4. Decide on Response
+        if ($currentProduct) {
+            // User is discussing $currentProduct
+            if ($showFullInfo) {
+                // Show full info
+                $priceFormatted = number_format($currentProduct->price, 0, ',', '.') . 'đ';
+                $statusText = $currentProduct->stock > 0 ? "Còn hàng (Số lượng còn: {$currentProduct->stock} sản phẩm)" : "Hết hàng";
+                $platform = strtoupper($currentProduct->platform ?? 'N/A');
+                $pubName = $currentProduct->publisher ? $currentProduct->publisher->name : 'Chưa có thông tin';
+                $genre = $currentProduct->genre ?: 'Chưa có thông tin';
+                $releaseDate = $currentProduct->release_date ? date('d/m/Y', strtotime($currentProduct->release_date)) : 'Chưa có thông tin';
+                $desc = $currentProduct->short_description ?: ($currentProduct->description ?: 'Không có mô tả.');
+                $url = route('products.show', $currentProduct);
+
+                $botReply = "Thông tin đầy đủ của sản phẩm **{$currentProduct->name}**:\n\n";
+                $botReply .= "🔹 Giá: **{$priceFormatted}**\n";
+                $botReply .= "🔹 Hệ máy: **{$platform}**\n";
+                $botReply .= "🔹 Tình trạng: **{$statusText}**\n";
+                $botReply .= "🔹 Nhà phát hành: **{$pubName}**\n";
+                $botReply .= "🔹 Thể loại: **{$genre}**\n";
+                $botReply .= "🔹 Ngày phát hành: **{$releaseDate}**\n";
+                $botReply .= "🔹 Mô tả ngắn: " . \Illuminate\Support\Str::limit($desc, 250) . "\n\n";
+                $botReply .= "🔗 [Xem chi tiết sản phẩm]({$url})";
+            } elseif (!empty($requestedAttributes)) {
+                // Reply only requested attributes
+                $replies = [];
+                foreach ($requestedAttributes as $key => $label) {
+                    if ($key === 'price') {
+                        $priceFormatted = number_format($currentProduct->price, 0, ',', '.') . 'đ';
+                        $replies[] = "🔹 **Giá**: {$priceFormatted}";
+                    }
+                    if ($key === 'stock') {
+                        $statusText = $currentProduct->stock > 0 ? "Còn hàng (Số lượng còn: {$currentProduct->stock})" : "Hết hàng";
+                        $replies[] = "🔹 **Tình trạng**: {$statusText}";
+                    }
+                    if ($key === 'platform') {
+                        $platform = strtoupper($currentProduct->platform ?? 'N/A');
+                        $replies[] = "🔹 **Hệ máy**: {$platform}";
+                    }
+                    if ($key === 'publisher') {
+                        $pubName = $currentProduct->publisher ? $currentProduct->publisher->name : 'Chưa có thông tin';
+                        $replies[] = "🔹 **Nhà phát hành**: {$pubName}";
+                    }
+                    if ($key === 'warranty') {
+                        $replies[] = "🔹 **Bảo hành**: Chưa có thông tin";
+                    }
+                    if ($key === 'version') {
+                        $replies[] = "🔹 **Phiên bản/Dung lượng**: Chưa có thông tin";
+                    }
+                    if ($key === 'genre') {
+                        $genre = $currentProduct->genre ?: 'Chưa có thông tin';
+                        $replies[] = "🔹 **Thể loại**: {$genre}";
+                    }
+                    if ($key === 'release_date') {
+                        $releaseDate = $currentProduct->release_date ? date('d/m/Y', strtotime($currentProduct->release_date)) : 'Chưa có thông tin';
+                        $replies[] = "🔹 **Ngày phát hành**: {$releaseDate}";
+                    }
                 }
+                $botReply = "Thông tin bạn hỏi về sản phẩm **{$currentProduct->name}**:\n\n" . implode("\n", $replies);
             } else {
-                // General list response for multiple products
-                $botReply = "Chào bạn! Tôi tìm thấy một số sản phẩm phù hợp với yêu cầu của bạn:\n\n";
-                foreach ($products as $product) {
-                    $priceFormatted = number_format($product->price, 0, ',', '.') . 'đ';
-                    $url = route('products.show', $product);
-                    $botReply .= "🔹 **{$product->name}**\n";
-                    $botReply .= "   Platform: " . strtoupper($product->platform ?? 'N/A') . "\n";
-                    $botReply .= "   Giá: {$priceFormatted}\n";
-                    $botReply .= "   🔗 [Xem chi tiết sản phẩm](" . $url . ")\n\n";
-                }
-                $botReply .= "Bạn có cần tư vấn thêm gì về các sản phẩm này không?";
+                // Welcoming overview
+                $priceFormatted = number_format($currentProduct->price, 0, ',', '.') . 'đ';
+                $statusText = $currentProduct->stock > 0 ? "Còn hàng" : "Hết hàng";
+                $platform = strtoupper($currentProduct->platform ?? 'N/A');
+                $url = route('products.show', $currentProduct);
+
+                $botReply = "Chào bạn! Đây là thông tin tổng quan của game **{$currentProduct->name}**:\n\n";
+                $botReply .= "🔹 Giá: **{$priceFormatted}**\n";
+                $botReply .= "🔹 Hệ máy: **{$platform}**\n";
+                $botReply .= "🔹 Tình trạng: **{$statusText}**\n\n";
+                $botReply .= "Bạn có cần tư vấn chi tiết hơn về các thuộc tính như số lượng, nhà phát hành, hay thể loại của game này không?\n";
+                $botReply .= "🔗 [Xem chi tiết sản phẩm]({$url})";
             }
         } else {
-            $botReply = "Chào bạn! Hiện tại tôi chưa tìm thấy sản phẩm nào khớp hoàn toàn với mô tả của bạn. Câu hỏi của bạn đã được ghi nhận, và quản trị viên của chúng tôi sẽ sớm phản hồi hỗ trợ bạn trực tiếp tại đây nhé!";
+            // No context product, check if they are filtering
+            if ($isPlatformFilter || $isPriceFilter || $isGenreFilter) {
+                $filterQuery = Product::with(['primaryImage', 'images', 'publisher'])->where('is_active', true);
+                $filterDesc = [];
+
+                if ($isPlatformFilter && $filterPlatform) {
+                    $filterQuery->where('platform', 'like', "%{$filterPlatform}%");
+                    $filterDesc[] = "hệ máy " . strtoupper($filterPlatform);
+                }
+
+                if ($isPriceFilter) {
+                    if ($filterPriceMax !== null) {
+                        $filterQuery->where('price', '<=', $filterPriceMax);
+                        $filterDesc[] = "giá dưới " . number_format($filterPriceMax, 0, ',', '.') . "đ";
+                    }
+                    if ($filterPriceMin !== null) {
+                        $filterQuery->where('price', '>=', $filterPriceMin);
+                        $filterDesc[] = "giá trên " . number_format($filterPriceMin, 0, ',', '.') . "đ";
+                    }
+                }
+
+                if ($isGenreFilter && $filterGenre) {
+                    $filterQuery->where(function ($q) use ($filterGenre) {
+                        $q->where('genre', 'like', "%{$filterGenre}%")
+                          ->orWhere('name', 'like', "%{$filterGenre}%")
+                          ->orWhere('short_description', 'like', "%{$filterGenre}%")
+                          ->orWhere('description', 'like', "%{$filterGenre}%");
+                    });
+                    $filterDesc[] = "thể loại " . $filterGenre;
+                }
+
+                $filteredProducts = $filterQuery->take(5)->get();
+                if ($filteredProducts->isNotEmpty()) {
+                    $descString = implode(', ', $filterDesc);
+                    $botReply = "Chào bạn! Tôi tìm thấy một số sản phẩm phù hợp với yêu cầu ({$descString}) của bạn:\n\n";
+                    foreach ($filteredProducts as $prod) {
+                        $priceFormatted = number_format($prod->price, 0, ',', '.') . 'đ';
+                        $url = route('products.show', $prod);
+                        $botReply .= "🔹 **{$prod->name}**\n";
+                        $botReply .= "   Platform: " . strtoupper($prod->platform ?? 'N/A') . "\n";
+                        $botReply .= "   Giá: {$priceFormatted}\n";
+                        $botReply .= "   🔗 [Xem chi tiết sản phẩm](" . $url . ")\n\n";
+                    }
+                } else {
+                    $botReply = "Hiện không tìm thấy sản phẩm phù hợp với yêu cầu của bạn.";
+                }
+            } else {
+                // No context, and not a filter query
+                $botReply = "Hiện tại tôi chưa rõ bạn đang cần tư vấn về sản phẩm hay chủ đề nào. Bạn có thể cho tôi biết tên game hoặc thông tin cụ thể bạn cần hỏi không?";
+            }
         }
 
         // 6. Save bot's message
@@ -215,5 +340,40 @@ class ChatbotController extends Controller
             'user_message' => $userMessage,
             'bot_message' => $botMessage,
         ]);
+    }
+
+    private function getLastDiscussedProduct($userId)
+    {
+        // Try session first
+        if (session()->has('chatbot_current_product_id')) {
+            $productId = session('chatbot_current_product_id');
+            $product = Product::with('publisher')->find($productId);
+            if ($product && $product->is_active) {
+                return $product;
+            }
+        }
+
+        // Fallback to database history (scan last 15 messages)
+        $messages = ChatbotMessage::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->take(15)
+            ->get();
+
+        foreach ($messages as $msg) {
+            if (preg_match('/\/products\/([a-z0-9\-]+)/', $msg->message, $matches)) {
+                $slug = $matches[1];
+                $product = Product::with('publisher')
+                    ->where('slug', $slug)
+                    ->orWhere('id', $slug)
+                    ->first();
+                
+                if ($product && $product->is_active) {
+                    session(['chatbot_current_product_id' => $product->id]);
+                    return $product;
+                }
+            }
+        }
+
+        return null;
     }
 }

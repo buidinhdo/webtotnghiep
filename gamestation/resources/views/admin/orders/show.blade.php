@@ -130,6 +130,13 @@
                 </div>
                 <hr>
                 <div class="row">
+                    <div class="col-6">Thanh toán:</div>
+                    <div class="col-6 text-right">
+                        {{ $order->payment_method_label }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
                     <div class="col-6">Giao hàng:</div>
                     <div class="col-6 text-right">
                         {{ $order->shipping_method === 'express' ? 'Nhanh (24h-48h)' : 'Tiêu chuẩn (2-4 ngày)' }}

@@ -362,13 +362,6 @@
                             </ul>
                         </li>
 
-                        <li class="nav-item">
-                            <a href="{{ route('admin.chatbot.index') }}" class="nav-link {{ Str::contains(Route::currentRouteName(), 'admin.chatbot') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-comments"></i>
-                                <p>Quản lý Chatbot</p>
-                            </a>
-                        </li>
-
                         <li class="nav-header">THỐNG KÊ</li>
 
                         <li class="nav-item">

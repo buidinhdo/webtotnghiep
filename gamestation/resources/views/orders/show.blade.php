@@ -79,6 +79,12 @@
                                 {{ $order->payment_status_label }}
                             </span>
                         </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500 font-medium">Phương thức thanh toán</span>
+                            <span class="text-slate-900 font-semibold text-xs">
+                                {{ $order->payment_method_label }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

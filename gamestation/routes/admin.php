@@ -93,10 +93,4 @@ Route::middleware('admin')->group(function () {
     Route::get('statistics/revenue', [StatisticsController::class, 'revenue'])->name('admin.statistics.revenue');
     Route::get('statistics/orders', [StatisticsController::class, 'orders'])->name('admin.statistics.orders');
     Route::get('statistics/users', [StatisticsController::class, 'users'])->name('admin.statistics.users');
-
-    // Chatbot Management
-    Route::get('chatbot', [\App\Http\Controllers\Admin\ChatbotController::class, 'index'])->name('admin.chatbot.index');
-    Route::get('chatbot/{user}', [\App\Http\Controllers\Admin\ChatbotController::class, 'show'])->name('admin.chatbot.show');
-    Route::post('chatbot/{user}/reply', [\App\Http\Controllers\Admin\ChatbotController::class, 'reply'])->name('admin.chatbot.reply');
-    Route::delete('chatbot/{user}', [\App\Http\Controllers\Admin\ChatbotController::class, 'destroy'])->name('admin.chatbot.destroy');
 });
