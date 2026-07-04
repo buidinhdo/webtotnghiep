@@ -21,9 +21,17 @@ class StatisticsController extends Controller
         $startDate = $request->input('start_date') ? now()->parse($request->input('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
         $endDate = $request->input('end_date') ? now()->parse($request->input('end_date'))->endOfDay() : now()->endOfDay();
 
-        $revenueData = Order::where('status', 'completed')
-            ->whereBetween('completed_at', [$startDate, $endDate])
-            ->selectRaw('DATE(completed_at) as date, SUM(total) as revenue, COUNT(*) as orders_count')
+        $revenueData = Order::where(function($query) use ($startDate, $endDate) {
+                $query->where('status', 'completed')
+                    ->where('payment_method', '!=', 'credit_card')
+                    ->whereBetween('completed_at', [$startDate, $endDate]);
+            })
+            ->orWhere(function($query) use ($startDate, $endDate) {
+                $query->where('payment_method', 'credit_card')
+                    ->where('payment_status', 'paid')
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->selectRaw('DATE(COALESCE(completed_at, created_at)) as date, SUM(total) as revenue, COUNT(*) as orders_count')
             ->groupBy('date')
             ->orderBy('date')
             ->get();
@@ -50,8 +58,16 @@ class StatisticsController extends Controller
         END";
 
         $categoryRevenue = Order::query()
-            ->where('orders.status', 'completed')
-            ->whereBetween('orders.completed_at', [$startDate, $endDate])
+            ->where(function($query) use ($startDate, $endDate) {
+                $query->where('orders.status', 'completed')
+                    ->where('orders.payment_method', '!=', 'credit_card')
+                    ->whereBetween('orders.completed_at', [$startDate, $endDate]);
+            })
+            ->orWhere(function($query) use ($startDate, $endDate) {
+                $query->where('orders.payment_method', 'credit_card')
+                    ->where('orders.payment_status', 'paid')
+                    ->whereBetween('orders.created_at', [$startDate, $endDate]);
+            })
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
@@ -94,8 +110,16 @@ class StatisticsController extends Controller
         $topProducts = Product::with('primaryImage')
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'completed')
-            ->whereBetween('orders.completed_at', [$startDate, $endDate])
+            ->where(function($query) use ($startDate, $endDate) {
+                $query->where('orders.status', 'completed')
+                    ->where('orders.payment_method', '!=', 'credit_card')
+                    ->whereBetween('orders.completed_at', [$startDate, $endDate]);
+            })
+            ->orWhere(function($query) use ($startDate, $endDate) {
+                $query->where('orders.payment_method', 'credit_card')
+                    ->where('orders.payment_status', 'paid')
+                    ->whereBetween('orders.created_at', [$startDate, $endDate]);
+            })
             ->select('products.*')
             ->selectRaw('SUM(order_items.quantity) as total_sold')
             ->selectRaw('SUM(order_items.total) as total_revenue')

@@ -25,16 +25,40 @@ class DashboardController extends Controller
         $thisMonth = now()->startOfMonth();
         $thisYear = now()->startOfYear();
 
-        $revenueToday = Order::where('status', 'completed')
-            ->whereDate('completed_at', today())
+        $revenueToday = Order::where(function($query) {
+                $query->where('status', 'completed')
+                    ->where('payment_method', '!=', 'credit_card')
+                    ->whereDate('completed_at', today());
+            })
+            ->orWhere(function($query) {
+                $query->where('payment_method', 'credit_card')
+                    ->where('payment_status', 'paid')
+                    ->whereDate('created_at', today());
+            })
             ->sum('total');
 
-        $revenueMonth = Order::where('status', 'completed')
-            ->whereBetween('completed_at', [$thisMonth, now()])
+        $revenueMonth = Order::where(function($query) use ($thisMonth) {
+                $query->where('status', 'completed')
+                    ->where('payment_method', '!=', 'credit_card')
+                    ->whereBetween('completed_at', [$thisMonth, now()]);
+            })
+            ->orWhere(function($query) use ($thisMonth) {
+                $query->where('payment_method', 'credit_card')
+                    ->where('payment_status', 'paid')
+                    ->whereBetween('created_at', [$thisMonth, now()]);
+            })
             ->sum('total');
 
-        $revenueYear = Order::where('status', 'completed')
-            ->whereBetween('completed_at', [$thisYear, now()])
+        $revenueYear = Order::where(function($query) use ($thisYear) {
+                $query->where('status', 'completed')
+                    ->where('payment_method', '!=', 'credit_card')
+                    ->whereBetween('completed_at', [$thisYear, now()]);
+            })
+            ->orWhere(function($query) use ($thisYear) {
+                $query->where('payment_method', 'credit_card')
+                    ->where('payment_status', 'paid')
+                    ->whereBetween('created_at', [$thisYear, now()]);
+            })
             ->sum('total');
 
         // Số đơn hàng theo trạng thái
@@ -79,10 +103,17 @@ class DashboardController extends Controller
         $chartEnd = now()->endOfDay();
 
         $chartRevenueRows = Order::where('status', 'completed')
+            ->where('payment_method', '!=', 'credit_card')
             ->whereBetween('completed_at', [$chartStart, $chartEnd])
             ->selectRaw('DATE(completed_at) as date, SUM(total) as revenue')
             ->groupBy('date')
-            ->orderBy('date')
+            ->pluck('revenue', 'date');
+
+        $vnpayRevenueRows = Order::where('payment_method', 'credit_card')
+            ->where('payment_status', 'paid')
+            ->whereBetween('created_at', [$chartStart, $chartEnd])
+            ->selectRaw('DATE(created_at) as date, SUM(total) as revenue')
+            ->groupBy('date')
             ->pluck('revenue', 'date');
 
         $chartOrderRows = Order::whereBetween('created_at', [$chartStart, $chartEnd])
@@ -106,7 +137,7 @@ class DashboardController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->toDateString();
             $chartLabels[] = now()->subDays($i)->format('d/m');
-            $chartRevenue[] = (float) ($chartRevenueRows[$date] ?? 0);
+            $chartRevenue[] = (float) ($chartRevenueRows[$date] ?? 0) + (float) ($vnpayRevenueRows[$date] ?? 0);
             $chartOrders[] = (int) ($chartOrderRows[$date] ?? 0);
             $chartCustomers[] = (int) ($chartCustomerRows[$date] ?? 0);
         }
@@ -195,7 +226,14 @@ class DashboardController extends Controller
         END";
 
         $revenueByGroup = Order::query()
-            ->where('orders.status', 'completed')
+            ->where(function($query) {
+                $query->where('orders.status', 'completed')
+                    ->where('orders.payment_method', '!=', 'credit_card');
+            })
+            ->orWhere(function($query) {
+                $query->where('orders.payment_method', 'credit_card')
+                    ->where('orders.payment_status', 'paid');
+            })
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
