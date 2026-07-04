@@ -21,6 +21,12 @@
                 </div>
 
                 <div>
+                    <x-input-label for="phone" :value="__('Số điện thoại')" />
+                    <x-text-input id="phone" class="mt-2 w-full gs-auth-input" type="text" name="phone" :value="old('phone')" required placeholder="Nhập số điện thoại" />
+                    <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+                </div>
+
+                <div>
                     <x-input-label for="password" :value="__('Mật khẩu')" />
                     <div class="relative mt-2">
                         <x-text-input id="password" class="w-full gs-auth-input pr-10" type="password" name="password" required autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
