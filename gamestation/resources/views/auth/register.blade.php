@@ -27,6 +27,12 @@
                 </div>
 
                 <div>
+                    <x-input-label for="address" :value="__('Địa chỉ')" />
+                    <x-text-input id="address" class="mt-2 w-full gs-auth-input" type="text" name="address" :value="old('address')" required placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố" />
+                    <x-input-error :messages="$errors->get('address')" class="mt-2" />
+                </div>
+
+                <div>
                     <x-input-label for="password" :value="__('Mật khẩu')" />
                     <div class="relative mt-2">
                         <x-text-input id="password" class="w-full gs-auth-input pr-10" type="password" name="password" required autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
