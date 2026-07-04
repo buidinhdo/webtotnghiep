@@ -28,7 +28,7 @@ class OrderController extends Controller
 
         $allowedStatuses = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
         $allowedPaymentStatuses = ['unpaid', 'paid', 'refunded', 'failed', 'pending'];
-        $allowedPaymentMethods = ['cod', 'card'];
+        $allowedPaymentMethods = ['cod', 'card', 'credit_card'];
 
         $orders = Order::with('user')
             ->when(in_array($status, $allowedStatuses, true), function ($query) use ($status) {
