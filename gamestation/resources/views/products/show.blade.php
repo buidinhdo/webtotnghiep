@@ -223,7 +223,7 @@
                                 <i class="fas fa-bolt mr-2"></i>{{ __('ui.login_btn_buy') }}
                             </a>
 
-                            <a href="{{ route('contact', ['product_id' => $product->id]) }}" class="w-full block text-center mt-2 rounded-lg border-2 border-transparent px-5 py-3 text-sm font-semibold text-sky-700 hover:bg-sky-50 transition-colors">
+                            <a href="{{ route('contact', ['product_id' => $product->id]) }}" class="w-full block text-center mt-2 rounded-lg border-2 border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-sky-600 hover:border-sky-300 transition-colors">
                                 <i class="fas fa-comment-dots mr-2"></i>{{ __('ui.quick_consult') }}
                             </a>
 
