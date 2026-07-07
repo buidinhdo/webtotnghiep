@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\UserNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderMail;
 
 class OrderController extends Controller
 {
@@ -111,6 +113,16 @@ class OrderController extends Controller
                 'title' => 'Cập nhật trạng thái đơn hàng',
                 'body' => "Đơn hàng {$order->id} của bạn đã thay đổi trạng thái từ '{$oldLabel}' sang '{$newLabel}'.",
             ]);
+
+            // Gửi email thông báo cập nhật trạng thái đơn hàng mới cho khách hàng
+            try {
+                $order->load(['user', 'items']);
+                if ($order->user && $order->user->email) {
+                    Mail::to($order->user->email)->send(new OrderMail($order));
+                }
+            } catch (\Exception $e) {
+                \Log::error('Gửi mail cập nhật trạng thái đơn hàng thất bại: ' . $e->getMessage());
+            }
         }
 
         return redirect()->route('admin.orders.show', $order)->with('success', 'Trạng thái đơn hàng đã được cập nhật.');

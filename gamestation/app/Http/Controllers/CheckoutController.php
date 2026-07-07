@@ -12,6 +12,8 @@ use App\Models\UserAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderMail;
 
 class CheckoutController extends Controller
 {
@@ -210,6 +212,13 @@ class CheckoutController extends Controller
             }
 
             return redirect()->away($vnp_Url);
+        }
+
+        // Gửi email cho khách đặt đơn hàng COD
+        try {
+            Mail::to($request->user()->email)->send(new OrderMail($order));
+        } catch (\Exception $e) {
+            \Log::error('Gửi mail đơn hàng COD thất bại: ' . $e->getMessage());
         }
 
         return redirect()->route('orders.show', $order)->with('success', 'Đặt hàng thành công.');
