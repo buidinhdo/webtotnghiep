@@ -165,7 +165,7 @@ class CheckoutController extends Controller
 
         if ($order->payment_method === 'credit_card') {
             $vnp_Url = config('vnpay.vnp_Url');
-            $vnp_Returnurl = config('vnpay.vnp_ReturnUrl');
+            $vnp_Returnurl = route('checkout.vnpay-return');
             $vnp_TmnCode = config('vnpay.vnp_TmnCode');
             $vnp_HashSecret = config('vnpay.vnp_HashSecret');
 
