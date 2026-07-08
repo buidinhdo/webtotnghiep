@@ -83,7 +83,7 @@ class ProductController extends Controller
         $product->load(['images', 'primaryImage', 'category', 'reviews.user']);
         $product->thumbnailImage = $product->primaryImage ?? $product->images->first();
         
-        $related = Product::with('primaryImage')
+        $related = Product::with(['primaryImage', 'images'])
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('is_active', true)

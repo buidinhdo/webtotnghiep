@@ -39,7 +39,7 @@
         @endauth
     @endif
 
-    <a href="{{ route('products.show', $product) }}" class="gs-product-image gs-product-image--hoverable">
+    <a href="{{ route('products.show', $product) }}" class="gs-product-image {{ $hoverImage ? 'gs-product-image--hoverable' : '' }}">
         {{-- Ảnh chính --}}
         <img src="{{ $image }}" alt="{{ $product->name }}" class="gs-product-img gs-product-img--main">
         {{-- Ảnh phụ (hiện khi hover, chỉ render nếu có) --}}
