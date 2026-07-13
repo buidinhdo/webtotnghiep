@@ -65,17 +65,16 @@ class LuckySpinController extends Controller
         }
 
         // Randomize prize index (0 to 7) with custom weight (total = 1000)
-        // Adjusting probabilities to favor higher-value coupons and Free Shipping.
-        // Index 4 (Chúc bạn may mắn lần sau) weight is 5, representing exactly 0.5% probability.
+        // Index 4 (Chúc bạn may mắn lần sau) weight is 1, representing exactly 0.1% probability (1/1000).
         $weights = [
-            0 => 10, // 50k (10%)
-            1 => 10, // 100k (10%)
-            2 => 20, // Freeship (20%)
-            3 => 15, // 200k (15%)
-            4 => 5,  // Lose (5%)
-            5 => 20, // 300k (20%)
-            6 => 10, // 150k (10%)
-            7 => 10, // 500k (10%)
+            0 => 100, // 50k (10%)
+            1 => 100, // 100k (10%)
+            2 => 200, // Freeship (20%)
+            3 => 150, // 200k (15%)
+            4 => 1,   // Lose (0.1%)
+            5 => 200, // 300k (20%)
+            6 => 100, // 150k (10%)
+            7 => 149, // 500k (14.9%)
         ];
 
         $prizeIndex = $this->weightedRandom($weights);

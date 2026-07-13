@@ -1,6 +1,16 @@
 <x-app-layout>
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-semibold text-slate-900">Thông báo</h1>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <h1 class="text-3xl font-semibold text-slate-900">Thông báo</h1>
+            @if (auth()->user()->userNotifications()->whereNull('read_at')->exists())
+                <form method="POST" action="{{ route('notifications.markAllRead') }}">
+                    @csrf
+                    <button type="submit" class="text-sm font-semibold text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-lg transition shadow-sm">
+                        Đánh dấu tất cả đã đọc
+                    </button>
+                </form>
+            @endif
+        </div>
 
         <div class="mt-6 space-y-4">
             @forelse ($notifications as $notification)
