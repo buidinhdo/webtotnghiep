@@ -595,6 +595,8 @@ class CheckoutController extends Controller
                 $order->update([
                     'payment_status' => 'paid',
                     'status' => 'processing',
+                    'placed_at' => now(),
+                    'created_at' => now(),
                 ]);
 
                 UserNotification::create([
@@ -675,6 +677,8 @@ class CheckoutController extends Controller
                     $order->update([
                         'payment_status' => 'paid',
                         'status' => 'processing',
+                        'placed_at' => now(),
+                        'created_at' => now(),
                     ]);
 
                     UserNotification::create([
