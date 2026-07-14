@@ -61,8 +61,9 @@ class ChatbotController extends Controller
                     $esrb = $p->esrb ?? 'Chưa phân loại';
                     $shortDesc = $p->short_description ?: 'Chưa cập nhật';
                     $description = $p->description ? \Illuminate\Support\Str::limit(strip_tags($p->description), 200) : 'Chưa cập nhật';
+                    $detailedSpecs = $p->detailed_description ? str_replace(["\r\n", "\r", "\n"], "; ", trim($p->detailed_description)) : 'Chưa cập nhật';
                     
-                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Danh mục: {$categoryName} | SKU: {$sku} | ESRB: {$esrb} | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Mô tả chi tiết: {$description} | Link chi tiết: {$url}\n";
+                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Danh mục: {$categoryName} | SKU: {$sku} | ESRB: {$esrb} | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Mô tả chi tiết: {$description} | Thông số chi tiết: {$detailedSpecs} | Link chi tiết: {$url}\n";
                 }
 
                 $systemInstruction = "Bạn là trợ lý ảo AI thông minh và thân thiện của cửa hàng GameStation.
