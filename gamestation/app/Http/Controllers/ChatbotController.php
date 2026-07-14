@@ -41,7 +41,7 @@ class ChatbotController extends Controller
         $botReply = null;
 
         // Try using Google Gemini API first
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.key');
         if ($apiKey) {
             try {
                 $storeAddress = \App\Models\Setting::get('store_address', config('shipping.shop_address', 'Hà Nội'));
