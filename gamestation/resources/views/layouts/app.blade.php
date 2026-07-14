@@ -160,7 +160,7 @@
                         userMessage: '',
                         loading: false,
                         pollingInterval: null,
-                        initChat() {
+                        init() {
                             this.fetchMessages();
                             // Start polling every 5 seconds to load admin responses
                             this.pollingInterval = setInterval(() => {
