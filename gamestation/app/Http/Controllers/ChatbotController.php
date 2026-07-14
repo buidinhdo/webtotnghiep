@@ -63,15 +63,66 @@ class ChatbotController extends Controller
                     $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Danh mục: {$categoryName} | SKU: {$sku} | ESRB: {$esrb} | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Thông số chi tiết: {$detailedSpecs} | Link chi tiết: {$url}\n";
                 }
 
+                // Detect specific order in user query
+                $orderContext = "";
+                $orderId = null;
+                if (preg_match('/(?:đơn hàng|đơn số|mã đơn|đơn)\s*(?:số)?\s*#?(\d+)/u', mb_strtolower($userMessageText), $matches)) {
+                    $orderId = $matches[1];
+                }
+
+                if ($orderId) {
+                    $order = \App\Models\Order::with('items')
+                        ->where('user_id', $user->id)
+                        ->where('id', $orderId)
+                        ->first();
+                    
+                    if ($order) {
+                        $orderItemsStr = $order->items->map(fn($item) => $item->product_name . " (x" . $item->quantity . ")")->implode(', ');
+                        $placedTime = $order->placed_at ? $order->placed_at->format('d/m/Y H:i:s') : $order->created_at->format('d/m/Y H:i:s');
+                        
+                        $orderContext = "THÔNG TIN CHI TIẾT ĐƠN HÀNG MÀ KHÁCH ĐANG HỎI TRỰC TIẾP:\n"
+                            . "- Mã đơn hàng: #{$order->id}\n"
+                            . "- Trạng thái đơn hàng: {$order->status_label}\n"
+                            . "- Thời gian tạo/đặt hàng: {$placedTime}\n"
+                            . "- Hình thức vận chuyển: " . ($order->shipping_method ?? 'Giao hàng tiêu chuẩn') . "\n"
+                            . "- Phí vận chuyển: " . number_format($order->shipping_fee, 0, ',', '.') . "đ\n"
+                            . "- Phương thức thanh toán: {$order->payment_method_label}\n"
+                            . "- Trạng thái thanh toán: {$order->payment_status_label}\n"
+                            . "- Người nhận: {$order->shipping_name} | SĐT: {$order->shipping_phone}\n"
+                            . "- Địa chỉ nhận hàng: {$order->shipping_address}\n"
+                            . "- Danh sách sản phẩm trong đơn: {$orderItemsStr}\n"
+                            . "- Tổng số tiền thanh toán: " . number_format($order->total, 0, ',', '.') . "đ\n";
+                    } else {
+                        $orderContext = "Hệ thống KHÔNG tìm thấy đơn hàng số #{$orderId} nào thuộc về tài khoản của khách hàng này.\n";
+                    }
+                } else {
+                    // Load last 3 orders as general context
+                    $recentOrders = \App\Models\Order::with('items')
+                        ->where('user_id', $user->id)
+                        ->orderBy('created_at', 'desc')
+                        ->take(3)
+                        ->get();
+                        
+                    if ($recentOrders->isNotEmpty()) {
+                        $orderContext = "DANH SÁCH 3 ĐƠN HÀNG GẦN NHẤT CỦA KHÁCH HÀNG:\n";
+                        foreach ($recentOrders as $ro) {
+                            $items = $ro->items->map(fn($item) => $item->product_name . " (x" . $item->quantity . ")")->implode(', ');
+                            $placedTime = $ro->placed_at ? $ro->placed_at->format('d/m/Y H:i') : $ro->created_at->format('d/m/Y H:i');
+                            $orderContext .= "- Đơn #{$ro->id} | Ngày đặt: {$placedTime} | Trạng thái: {$ro->status_label} | Phí ship: " . number_format($ro->shipping_fee, 0, ',', '.') . "đ | Vận chuyển: " . ($ro->shipping_method ?? 'Giao hàng tiêu chuẩn') . " | Tổng tiền: " . number_format($ro->total, 0, ',', '.') . "đ | Sản phẩm: [{$items}]\n";
+                        }
+                    }
+                }
+
                 $systemInstruction = "Bạn là trợ lý ảo AI thông minh và thân thiện của cửa hàng GameStation.
 Nhiệm vụ của bạn là trả lời các câu hỏi của khách hàng về sản phẩm, chính sách của shop một cách tự nhiên, lịch sự bằng tiếng Việt.
 Hãy xưng hô là 'Shop' và gọi khách hàng là 'bạn'.
 Địa chỉ cửa hàng: {$storeAddress}. Số điện thoại: {$storePhone}.
 
-Dưới đây là danh sách sản phẩm thực tế của cửa hàng kèm đường link chi tiết. Khi trả lời hoặc gợi ý sản phẩm, hãy LUÔN cung cấp link chi tiết (sử dụng định dạng markdown: [Tên game](URL_Link) để khách bấm vào xem được):
+Dưới đây là danh sách sản phẩm thực tế của cửa hàng kèm đường link chi tiết và thông số chi tiết:
 {$catalog}
 
-Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Không bịa đặt thông tin không có trong danh sách.";
+" . (!empty($orderContext) ? "Dữ liệu đơn hàng của khách hàng hiện tại:\n{$orderContext}\n" : "") . "
+Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Đối với câu hỏi về sản phẩm, hãy LUÔN cung cấp link chi tiết dưới dạng markdown (ví dụ: [Tên game](URL_Link)). Đối với câu hỏi về đơn hàng, hãy sử dụng dữ liệu đơn hàng được cung cấp ở trên để trả lời đầy đủ, chi tiết, chính xác các thông tin như tình trạng đơn hàng, thời gian, hình thức vận chuyển, phí ship... Không bịa đặt thông tin không có trong danh sách.";
 
                 // Get conversation history (last 10 messages)
                 $history = ChatbotMessage::where('user_id', $user->id)
