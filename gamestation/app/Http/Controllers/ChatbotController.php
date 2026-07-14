@@ -47,8 +47,7 @@ class ChatbotController extends Controller
                 $storeAddress = \App\Models\Setting::get('store_address', config('shipping.shop_address', 'Hà Nội'));
                 $storePhone = \App\Models\Setting::get('store_phone', '0123456789');
 
-                $products = Product::with('publisher')->where('is_active', true)
-                    ->select('id', 'name', 'price', 'stock', 'platform', 'genre', 'slug', 'publisher_id', 'release_date', 'short_description')
+                $products = Product::with(['publisher', 'category'])->where('is_active', true)
                     ->take(150)
                     ->get();
 
@@ -56,10 +55,14 @@ class ChatbotController extends Controller
                 foreach ($products as $p) {
                     $url = route('products.show', $p);
                     $publisherName = $p->publisher ? $p->publisher->name : 'Chưa cập nhật';
+                    $categoryName = $p->category ? $p->category->name : 'Chưa cập nhật';
                     $releaseDate = $p->release_date ? date('d/m/Y', strtotime($p->release_date)) : 'Chưa cập nhật';
-                    $shortDesc = $p->short_description ? \Illuminate\Support\Str::limit($p->short_description, 100) : 'Chưa cập nhật';
+                    $sku = $p->sku ?? 'N/A';
+                    $esrb = $p->esrb ?? 'Chưa phân loại';
+                    $shortDesc = $p->short_description ?: 'Chưa cập nhật';
+                    $description = $p->description ? \Illuminate\Support\Str::limit(strip_tags($p->description), 200) : 'Chưa cập nhật';
                     
-                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Link chi tiết: {$url}\n";
+                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Danh mục: {$categoryName} | SKU: {$sku} | ESRB: {$esrb} | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Mô tả chi tiết: {$description} | Link chi tiết: {$url}\n";
                 }
 
                 $systemInstruction = "Bạn là trợ lý ảo AI thông minh và thân thiện của cửa hàng GameStation.
