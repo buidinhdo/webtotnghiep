@@ -47,23 +47,60 @@ class ChatbotController extends Controller
                 $storeAddress = \App\Models\Setting::get('store_address', config('shipping.shop_address', 'Hà Nội'));
                 $storePhone = \App\Models\Setting::get('store_phone', '0123456789');
 
-                $products = Product::with(['publisher', 'category'])->where('is_active', true)
-                    ->take(150)
-                    ->get();
+                // 1. Search for matching products to include full details (RAG)
+                $words = array_filter(explode(' ', preg_replace('/[^\p{L}\p{N}\s]/u', '', mb_strtolower($userMessageText))));
+                $searchWords = array_filter($words, function($w) {
+                    return mb_strlen($w) >= 2; // match words with 2 or more characters (e.g. 'PS5', 'RPG')
+                });
+
+                $matchedIds = [];
+                $matchedProducts = collect();
+                if (!empty($searchWords)) {
+                    $matchedProducts = Product::with(['publisher', 'category'])
+                        ->where('is_active', true)
+                        ->where(function($q) use ($searchWords) {
+                            foreach ($searchWords as $word) {
+                                $q->orWhere('name', 'like', "%{$word}%")
+                                  ->orWhere('platform', 'like', "%{$word}%")
+                                  ->orWhere('genre', 'like', "%{$word}%");
+                            }
+                        })
+                        ->take(8) // Limit to top 8 detailed products to keep token count low
+                        ->get();
+                    $matchedIds = $matchedProducts->pluck('id')->toArray();
+                }
+
+                // 2. Fetch all active products
+                $allProducts = Product::where('is_active', true)->get();
 
                 $catalog = "";
-                foreach ($products as $p) {
+                // First list the highly relevant products with full details
+                if ($matchedProducts->isNotEmpty()) {
+                    $catalog .= "### CÁC SẢN PHẨM KHÁCH HÀNG ĐANG HỎI HOẶC LIÊN QUAN TRỰC TIẾP:\n";
+                    foreach ($matchedProducts as $p) {
+                        $url = route('products.show', $p);
+                        $publisherName = $p->publisher ? $p->publisher->name : 'Chưa cập nhật';
+                        $categoryName = $p->category ? $p->category->name : 'Chưa cập nhật';
+                        $releaseDate = $p->release_date ? date('d/m/Y', strtotime($p->release_date)) : 'Chưa cập nhật';
+                        $sku = $p->sku ?? 'N/A';
+                        $esrb = $p->esrb ?? 'Chưa phân loại';
+                        $shortDesc = $p->short_description ?: 'Chưa cập nhật';
+                        $description = $p->description ? \Illuminate\Support\Str::limit(strip_tags($p->description), 200) : 'Chưa cập nhật';
+                        $detailedSpecs = $p->detailed_description ? str_replace(["\r\n", "\r", "\n"], "; ", trim($p->detailed_description)) : 'Chưa cập nhật';
+                        
+                        $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Danh mục: {$categoryName} | SKU: {$sku} | ESRB: {$esrb} | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Mô tả chi tiết: {$description} | Thông số chi tiết: {$detailedSpecs} | Link chi tiết: {$url}\n";
+                    }
+                    $catalog .= "\n";
+                }
+
+                // Then list all products in compact mode so Gemini knows the full inventory, prices, and links
+                $catalog .= "### DANH SÁCH TOÀN BỘ SẢN PHẨM KHÁC CỦA CỬA HÀNG (TÓM TẮT):\n";
+                foreach ($allProducts as $p) {
+                    if (in_array($p->id, $matchedIds)) {
+                        continue;
+                    }
                     $url = route('products.show', $p);
-                    $publisherName = $p->publisher ? $p->publisher->name : 'Chưa cập nhật';
-                    $categoryName = $p->category ? $p->category->name : 'Chưa cập nhật';
-                    $releaseDate = $p->release_date ? date('d/m/Y', strtotime($p->release_date)) : 'Chưa cập nhật';
-                    $sku = $p->sku ?? 'N/A';
-                    $esrb = $p->esrb ?? 'Chưa phân loại';
-                    $shortDesc = $p->short_description ?: 'Chưa cập nhật';
-                    $description = $p->description ? \Illuminate\Support\Str::limit(strip_tags($p->description), 200) : 'Chưa cập nhật';
-                    $detailedSpecs = $p->detailed_description ? str_replace(["\r\n", "\r", "\n"], "; ", trim($p->detailed_description)) : 'Chưa cập nhật';
-                    
-                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Danh mục: {$categoryName} | SKU: {$sku} | ESRB: {$esrb} | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Mô tả chi tiết: {$description} | Thông số chi tiết: {$detailedSpecs} | Link chi tiết: {$url}\n";
+                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Link chi tiết: {$url}\n";
                 }
 
                 $systemInstruction = "Bạn là trợ lý ảo AI thông minh và thân thiện của cửa hàng GameStation.
@@ -112,7 +149,7 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Không 
                     ];
                 }
 
-                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                $response = \Illuminate\Support\Facades\Http::timeout(15)->withHeaders([
                     'Content-Type' => 'application/json',
                 ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={$apiKey}", [
                     'contents' => $payloadContents,
