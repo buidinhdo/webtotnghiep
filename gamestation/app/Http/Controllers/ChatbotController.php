@@ -130,6 +130,8 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Không 
                 if ($response->successful()) {
                     $data = $response->json();
                     $botReply = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                } else {
+                    \Illuminate\Support\Facades\Log::error("Gemini API Request Failed with status " . $response->status() . ": " . $response->body());
                 }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Gemini API Error: " . $e->getMessage());
