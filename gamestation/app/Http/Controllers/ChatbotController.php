@@ -47,15 +47,19 @@ class ChatbotController extends Controller
                 $storeAddress = \App\Models\Setting::get('store_address', config('shipping.shop_address', 'Hà Nội'));
                 $storePhone = \App\Models\Setting::get('store_phone', '0123456789');
 
-                $products = Product::where('is_active', true)
-                    ->select('id', 'name', 'price', 'stock', 'platform', 'genre', 'slug')
+                $products = Product::with('publisher')->where('is_active', true)
+                    ->select('id', 'name', 'price', 'stock', 'platform', 'genre', 'slug', 'publisher_id', 'release_date', 'short_description')
                     ->take(150)
                     ->get();
 
                 $catalog = "";
                 foreach ($products as $p) {
                     $url = route('products.show', $p);
-                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Link chi tiết: {$url}\n";
+                    $publisherName = $p->publisher ? $p->publisher->name : 'Chưa cập nhật';
+                    $releaseDate = $p->release_date ? date('d/m/Y', strtotime($p->release_date)) : 'Chưa cập nhật';
+                    $shortDesc = $p->short_description ? \Illuminate\Support\Str::limit($p->short_description, 100) : 'Chưa cập nhật';
+                    
+                    $catalog .= "- Tên: {$p->name} | Hệ máy: " . strtoupper($p->platform ?? 'N/A') . " | Giá: " . number_format($p->price, 0, ',', '.') . "đ | Tồn kho: {$p->stock} | Thể loại: {$p->genre} | Nhà phát hành: {$publisherName} | Ngày ra mắt: {$releaseDate} | Mô tả ngắn: {$shortDesc} | Link chi tiết: {$url}\n";
                 }
 
                 $systemInstruction = "Bạn là trợ lý ảo AI thông minh và thân thiện của cửa hàng GameStation.
