@@ -204,13 +204,15 @@
                                     this.isListening = false;
                                 };
 
-                                this.recognition.onresult = (event) => {
-                                    const transcript = event.results[0][0].transcript;
-                                    if (transcript) {
-                                        this.userMessage = transcript;
-                                        this.sendMessage();
-                                    }
-                                };
+                                 this.recognition.onresult = (event) => {
+                                     let transcript = event.results[0][0].transcript;
+                                     if (transcript) {
+                                         // Auto correct common speech-to-text homophone errors
+                                         transcript = transcript.replace(/\b4\s*(vấn|van)\b/gi, 'tư vấn');
+                                         this.userMessage = transcript;
+                                         this.sendMessage();
+                                     }
+                                 };
                             }
 
                             this.recognition.start();
