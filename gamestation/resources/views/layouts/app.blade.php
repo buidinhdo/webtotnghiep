@@ -168,21 +168,6 @@
                                     this.fetchMessages();
                                 }
                             }, 5000);
-
-                            // Proactive Chatbot Trigger
-                            setTimeout(() => {
-                                if (this.messages.length === 0 && !this.chatOpen) {
-                                    fetch('{{ route('chatbot.proactive') }}?current_url=' + encodeURIComponent(window.location.href))
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            if (data.success && data.message) {
-                                                this.messages.push(data.bot_message);
-                                                this.chatOpen = true;
-                                                this.scrollToBottom();
-                                            }
-                                        });
-                                }
-                            }, 15000); // Trigger after 15 seconds
                         },
                         fetchMessages() {
                             fetch('{{ route('chatbot.messages') }}')
