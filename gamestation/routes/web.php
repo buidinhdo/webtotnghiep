@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
     // Chatbot Routes
     Route::get('/chatbot/messages', [\App\Http\Controllers\ChatbotController::class, 'getMessages'])->name('chatbot.messages');
     Route::post('/chatbot/send', [\App\Http\Controllers\ChatbotController::class, 'sendMessage'])->name('chatbot.send');
+    Route::get('/chatbot/proactive', [\App\Http\Controllers\ChatbotController::class, 'getProactiveMessage'])->name('chatbot.proactive');
 });
 
 // Language switcher
