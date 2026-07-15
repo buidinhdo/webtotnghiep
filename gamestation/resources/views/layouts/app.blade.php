@@ -137,10 +137,18 @@
                     </div>
 
                     <!-- Input area -->
-                    <form @submit.prevent="sendMessage()" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+                    <form @submit.prevent="sendMessage()" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
                         <input type="text" x-model="userMessage" placeholder="Nhập tin nhắn..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500" required>
-                        <button type="submit" class="bg-sky-600 hover:bg-sky-500 transition px-3 rounded-xl flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        
+                        <!-- Mic Button -->
+                        <button type="button" @click="toggleSpeechRecognition()" :class="isListening ? 'bg-red-600 hover:bg-red-500 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'" class="transition p-2 rounded-xl flex items-center justify-center text-white" title="Nói để nhập văn bản">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path>
+                            </svg>
+                        </button>
+
+                        <button type="submit" class="bg-sky-600 hover:bg-sky-500 transition px-3 py-2 rounded-xl flex items-center justify-center">
+                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                         </button>
                     </form>
                 </div>
@@ -160,6 +168,52 @@
                         userMessage: '',
                         loading: false,
                         pollingInterval: null,
+                        isListening: false,
+                        recognition: null,
+                        toggleSpeechRecognition() {
+                            if (this.isListening) {
+                                if (this.recognition) {
+                                    this.recognition.stop();
+                                }
+                                this.isListening = false;
+                                return;
+                            }
+
+                            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                            if (!SpeechRecognition) {
+                                alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Microsoft Edge.");
+                                return;
+                            }
+
+                            if (!this.recognition) {
+                                this.recognition = new SpeechRecognition();
+                                this.recognition.lang = 'vi-VN';
+                                this.recognition.continuous = false;
+                                this.recognition.interimResults = false;
+
+                                this.recognition.onstart = () => {
+                                    this.isListening = true;
+                                };
+
+                                this.recognition.onerror = (event) => {
+                                    console.error("Speech recognition error:", event.error);
+                                    this.isListening = false;
+                                };
+
+                                this.recognition.onend = () => {
+                                    this.isListening = false;
+                                };
+
+                                this.recognition.onresult = (event) => {
+                                    const transcript = event.results[0][0].transcript;
+                                    if (transcript) {
+                                        this.userMessage = transcript;
+                                    }
+                                };
+                            }
+
+                            this.recognition.start();
+                        },
                         init() {
                             this.fetchMessages();
                             // Start polling every 5 seconds to load admin responses
