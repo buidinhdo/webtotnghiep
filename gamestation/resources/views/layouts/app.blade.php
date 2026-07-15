@@ -279,15 +279,24 @@
                             });
                         },
                         formatMessage(text) {
-                            // Simple markdown-like formatting for links: [text](url) -> <a href="url">text</a>
-                            // And bold text: **text** -> <strong>text</strong>
+                            // Simple markdown-like formatting for images, links and bold text
                             let formatted = text
                                 .replace(/&/g, '&amp;')
                                 .replace(/</g, '&lt;')
-                                .replace(/>/g, '&gt;')
-                                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-sky-400 hover:underline font-semibold" target="_blank">$1</a>')
-                                .replace(/\n/g, '<br>');
+                                .replace(/>/g, '&gt;');
+
+                            // Parse images first: ![alt](url) -> <img ...>
+                            formatted = formatted.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-lg mt-2 shadow-md border border-slate-700 max-h-48 object-cover">');
+
+                            // Parse bold text
+                            formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+                            // Parse links
+                            formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-sky-400 hover:underline font-semibold" target="_blank">$1</a>');
+
+                            // Parse newlines
+                            formatted = formatted.replace(/\n/g, '<br>');
+
                             return formatted;
                         }
                     }));
