@@ -208,6 +208,7 @@
                                     const transcript = event.results[0][0].transcript;
                                     if (transcript) {
                                         this.userMessage = transcript;
+                                        this.sendMessage();
                                     }
                                 };
                             }
