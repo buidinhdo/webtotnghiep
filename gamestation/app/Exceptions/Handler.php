@@ -26,5 +26,18 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+
+        $this->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang (F5).'
+                ], 419);
+            }
+
+            return redirect()->back()
+                ->withInput($request->except($this->dontFlash))
+                ->with('status', 'Phiên làm việc đã hết hạn do bạn để trang quá lâu. Vui lòng nhấn đăng nhập lại.');
+        });
     }
 }

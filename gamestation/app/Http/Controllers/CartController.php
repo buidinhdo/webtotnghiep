@@ -58,7 +58,7 @@ class CartController extends Controller
 
         $item->update(['quantity' => $data['quantity']]);
 
-        return back()->with('success', 'Cap nhat gio hang thanh cong.');
+        return back()->with('success', 'Cập nhật giỏ hàng thành công.');
     }
 
     public function remove(Request $request, CartItem $item)
