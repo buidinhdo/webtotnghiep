@@ -38,6 +38,32 @@ class HomeController extends Controller
             $latest = $latestQuery->take(15)->get();
         }
 
+        // Reorder products in the latest list as requested
+        $borderlands = $latest->first(fn($p) => str_contains($p->name, 'Borderlands 4 Deluxe Edition'));
+        $yakuza = $latest->first(fn($p) => str_contains($p->name, 'Yakuza 0: Director'));
+        $doubleOSeven = $latest->first(fn($p) => str_contains($p->name, '007 First Light'));
+
+        $latest = $latest->filter(function($p) {
+            return !str_contains($p->name, 'Borderlands 4 Deluxe Edition')
+                && !str_contains($p->name, 'Yakuza 0: Director')
+                && !str_contains($p->name, '007 First Light');
+        });
+
+        // Move 007 First Light to the beginning (replacing top position)
+        if ($doubleOSeven) {
+            $latest->prepend($doubleOSeven);
+        }
+
+        // Place Borderlands 4 Deluxe and Yakuza 0 at the end
+        if ($borderlands) {
+            $latest->push($borderlands);
+        }
+        if ($yakuza) {
+            $latest->push($yakuza);
+        }
+
+        $latest = $latest->values();
+
         $ps4 = Product::with(['primaryImage', 'images', 'category'])
             ->where('is_active', true)
             ->when($categoryMap->get('ps4'), fn ($query, $categoryId) => $query->where('category_id', $categoryId))
