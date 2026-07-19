@@ -68,6 +68,18 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->has('images') || $request->hasFile('images')) {
+            $images = array_filter($request->file('images') ?? [], function ($file) {
+                return $file !== null && $file instanceof \Illuminate\Http\UploadedFile && $file->isValid();
+            });
+            if (empty($images)) {
+                $request->request->remove('images');
+                $request->files->remove('images');
+            } else {
+                $request->files->set('images', $images);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -148,6 +160,18 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
+        if ($request->has('images') || $request->hasFile('images')) {
+            $images = array_filter($request->file('images') ?? [], function ($file) {
+                return $file !== null && $file instanceof \Illuminate\Http\UploadedFile && $file->isValid();
+            });
+            if (empty($images)) {
+                $request->request->remove('images');
+                $request->files->remove('images');
+            } else {
+                $request->files->set('images', $images);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
