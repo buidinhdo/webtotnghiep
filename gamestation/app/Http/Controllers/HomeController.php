@@ -42,27 +42,64 @@ class HomeController extends Controller
         $borderlands = $latest->first(fn($p) => str_contains($p->name, 'Borderlands 4 Deluxe Edition'));
         $yakuza = $latest->first(fn($p) => str_contains($p->name, 'Yakuza 0: Director'));
         $doubleOSeven = $latest->first(fn($p) => str_contains($p->name, '007 First Light'));
+        
+        $mortal = $latest->first(fn($p) => str_contains($p->name, 'Mortal Kombat 11: Ultimate Edition'));
+        $legend = $latest->first(fn($p) => str_contains($p->name, 'Trails Through Daybreak – Deluxe Edition II'));
+        $naruto = $latest->first(fn($p) => str_contains($p->name, 'Naruto X Boruto Ultimate Ninja Storm'));
+        $dragonball = $latest->first(fn($p) => str_contains($p->name, 'Dragon Ball Xenoverse 2'));
 
         $latest = $latest->filter(function($p) {
             return !str_contains($p->name, 'Borderlands 4 Deluxe Edition')
                 && !str_contains($p->name, 'Yakuza 0: Director')
-                && !str_contains($p->name, '007 First Light');
+                && !str_contains($p->name, '007 First Light')
+                && !str_contains($p->name, 'Mortal Kombat 11: Ultimate Edition')
+                && !str_contains($p->name, 'Trails Through Daybreak – Deluxe Edition II')
+                && !str_contains($p->name, 'Naruto X Boruto Ultimate Ninja Storm')
+                && !str_contains($p->name, 'Dragon Ball Xenoverse 2');
         });
 
-        // Move 007 First Light to the beginning (replacing top position)
+        // Reconstruct the collection list
+        $reordered = collect();
+
+        // Position 1: 007 First Light
         if ($doubleOSeven) {
-            $latest->prepend($doubleOSeven);
+            $reordered->push($doubleOSeven);
         }
 
-        // Place Borderlands 4 Deluxe and Yakuza 0 at the end
+        // Position 2: First remaining product
+        $firstRemaining = $latest->shift();
+        if ($firstRemaining) {
+            $reordered->push($firstRemaining);
+        }
+
+        // Position 3: Mortal Kombat 11
+        if ($mortal) {
+            $reordered->push($mortal);
+        }
+
+        // Position 4: The Legend of Heroes
+        if ($legend) {
+            $reordered->push($legend);
+        }
+
+        // Merge other remaining products
+        $reordered = $reordered->merge($latest);
+
+        // Place Borderlands 4, Yakuza 0, Naruto, and Dragon Ball at the end
         if ($borderlands) {
-            $latest->push($borderlands);
+            $reordered->push($borderlands);
         }
         if ($yakuza) {
-            $latest->push($yakuza);
+            $reordered->push($yakuza);
+        }
+        if ($naruto) {
+            $reordered->push($naruto);
+        }
+        if ($dragonball) {
+            $reordered->push($dragonball);
         }
 
-        $latest = $latest->values();
+        $latest = $reordered->values();
 
         $ps4 = Product::with(['primaryImage', 'images', 'category'])
             ->where('is_active', true)
