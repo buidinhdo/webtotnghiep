@@ -38,15 +38,18 @@ class HomeController extends Controller
             $latest = $latestQuery->take(15)->get();
         }
 
+        // Fetch Macross and Ghostrunner manually since they are older than cutoff date
+        $macross = Product::with(['primaryImage', 'images', 'category'])
+            ->where('name', 'like', '%Macross Shooting Insight%')
+            ->first();
+        $ghostrunner = Product::with(['primaryImage', 'images', 'category'])
+            ->where('name', 'like', '%Ghostrunner%')
+            ->first();
+
         // Reorder products in the latest list as requested
-        $borderlands = $latest->first(fn($p) => str_contains($p->name, 'Borderlands 4 Deluxe Edition'));
-        $yakuza = $latest->first(fn($p) => str_contains($p->name, 'Yakuza 0: Director'));
         $doubleOSeven = $latest->first(fn($p) => str_contains($p->name, '007 First Light'));
-        
         $mortal = $latest->first(fn($p) => str_contains($p->name, 'Mortal Kombat 11: Ultimate Edition'));
         $legend = $latest->first(fn($p) => str_contains($p->name, 'Trails Through Daybreak – Deluxe Edition II'));
-        $naruto = $latest->first(fn($p) => str_contains($p->name, 'Naruto X Boruto Ultimate Ninja Storm'));
-        $dragonball = $latest->first(fn($p) => str_contains($p->name, 'Dragon Ball Xenoverse 2'));
 
         $latest = $latest->filter(function($p) {
             return !str_contains($p->name, 'Borderlands 4 Deluxe Edition')
@@ -85,18 +88,12 @@ class HomeController extends Controller
         // Merge other remaining products
         $reordered = $reordered->merge($latest);
 
-        // Place Borderlands 4, Yakuza 0, Naruto, and Dragon Ball at the end
-        if ($borderlands) {
-            $reordered->push($borderlands);
+        // Place Macross and Ghostrunner at the end
+        if ($macross) {
+            $reordered->push($macross);
         }
-        if ($yakuza) {
-            $reordered->push($yakuza);
-        }
-        if ($naruto) {
-            $reordered->push($naruto);
-        }
-        if ($dragonball) {
-            $reordered->push($dragonball);
+        if ($ghostrunner) {
+            $reordered->push($ghostrunner);
         }
 
         $latest = $reordered->values();
