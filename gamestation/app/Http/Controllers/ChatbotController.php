@@ -73,6 +73,19 @@ class ChatbotController extends Controller
                     $orderId = $matches[1];
                 }
 
+                $isTodayQuery = false;
+                $specificQueryDate = null;
+                $lowerMsg = mb_strtolower($userMessageText);
+
+                if (str_contains($lowerMsg, 'hôm nay') || str_contains($lowerMsg, 'ngày hôm nay') || str_contains($lowerMsg, 'đơn hôm nay')) {
+                    $isTodayQuery = true;
+                } elseif (preg_match('/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/', $userMessageText, $dateMatches)) {
+                    $day = $dateMatches[1];
+                    $month = $dateMatches[2];
+                    $year = isset($dateMatches[3]) ? $dateMatches[3] : date('Y');
+                    $specificQueryDate = sprintf('%04d-%02d-%02d', $year, $month, $day);
+                }
+
                 if ($orderId) {
                     $order = \App\Models\Order::with('items')
                         ->where('user_id', $user->id)
@@ -98,6 +111,26 @@ class ChatbotController extends Controller
                             . "- Tổng số tiền thanh toán: " . number_format($order->total, 0, ',', '.') . "đ\n";
                     } else {
                         $orderContext = "Hệ thống KHÔNG tìm thấy đơn hàng số #{$orderId} nào thuộc về tài khoản của khách hàng này.\n";
+                    }
+                } elseif ($isTodayQuery || $specificQueryDate) {
+                    $targetDate = $isTodayQuery ? \Carbon\Carbon::today()->toDateString() : $specificQueryDate;
+                    $targetDateFormatted = $isTodayQuery ? date('d/m/Y') : sprintf('%02d/%02d/%04d', $day, $month, $year);
+                    
+                    $orders = \App\Models\Order::with('items')
+                        ->where('user_id', $user->id)
+                        ->whereDate('created_at', $targetDate)
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+                        
+                    if ($orders->isNotEmpty()) {
+                        $orderContext = "DANH SÁCH CÁC ĐƠN HÀNG ĐÃ ĐẶT TRONG NGÀY {$targetDateFormatted}:\n";
+                        foreach ($orders as $o) {
+                            $items = $o->items->map(fn($item) => $item->product_name . " (x" . $item->quantity . ")")->implode(', ');
+                            $placedTime = $o->placed_at ? $o->placed_at->format('d/m/Y H:i') : $o->created_at->format('d/m/Y H:i');
+                            $orderContext .= "- Đơn #{$o->id} | Ngày đặt: {$placedTime} | Trạng thái: {$o->status_label} | Khoảng cách: " . number_format($o->shipping_distance_km, 2, ',', '.') . " km | Phí ship: " . number_format($o->shipping_fee, 0, ',', '.') . "đ | Vận chuyển: " . ($o->shipping_method ?? 'Giao hàng tiêu chuẩn') . " | Phương thức thanh toán: {$o->payment_method_label} | Trạng thái thanh toán: {$o->payment_status_label} | Tổng tiền: " . number_format($o->total, 0, ',', '.') . "đ | Sản phẩm: [{$items}]\n";
+                        }
+                    } else {
+                        $orderContext = "Khách hàng KHÔNG có bất kỳ đơn hàng nào được đặt vào ngày {$targetDateFormatted}.\n";
                     }
                 } else {
                     // Load last 3 orders as general context
