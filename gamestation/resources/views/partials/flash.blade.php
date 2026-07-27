@@ -4,7 +4,7 @@
             {{ session('success') }}
         </div>
     </div>
-    @if (session('success') === 'Đặt hàng thành công.')
+    @if (session('success') === 'Đặt hàng thành công.' || session('success') === 'Thanh toán đơn hàng qua VNPay thành công.')
         <audio id="orderSuccessSound" src="https://tiengdong.com/wp-content/uploads/tieng-ting-ting-chuyen-khoan-www_tiengdong_com.mp3" preload="auto"></audio>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
