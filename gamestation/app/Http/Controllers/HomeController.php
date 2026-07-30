@@ -64,15 +64,15 @@ class HomeController extends Controller
         // Reconstruct the collection list
         $reordered = collect();
 
-        // Position 1: 007 First Light
-        if ($doubleOSeven) {
-            $reordered->push($doubleOSeven);
-        }
-
-        // Position 2: First remaining product
+        // Position 1: First remaining product (newest product)
         $firstRemaining = $latest->shift();
         if ($firstRemaining) {
             $reordered->push($firstRemaining);
+        }
+
+        // Position 2: 007 First Light
+        if ($doubleOSeven) {
+            $reordered->push($doubleOSeven);
         }
 
         // Position 3: Mortal Kombat 11
