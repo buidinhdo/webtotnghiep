@@ -148,7 +148,7 @@
 
                     <!-- Input area -->
                     <div class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
-                        <textarea x-model="userMessage" x-ref="messageInput" @paste="handlePaste($event)" @keydown.enter.prevent="sendMessage()" rows="1" placeholder="Nhập tin nhắn hoặc dán ảnh (Ctrl+V)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500 resize-none h-[38px]" :required="!selectedImage"></textarea>
+                        <textarea x-model="userMessage" x-ref="messageInput" @paste="handlePaste($event)" @keydown.enter="if (userMessage.trim()) { $event.preventDefault(); sendMessage(); }" rows="1" placeholder="Nhập tin nhắn hoặc dán ảnh (Ctrl+V)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500 resize-none h-[38px]" :required="!selectedImage"></textarea>
                         
                         <!-- Mic Button -->
                         <button type="button" @click="toggleSpeechRecognition()" :class="isListening ? 'bg-red-600 hover:bg-red-500 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'" class="transition p-2 rounded-xl flex items-center justify-center text-white" title="Nói để nhập văn bản">
