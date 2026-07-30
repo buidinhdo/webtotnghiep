@@ -147,7 +147,7 @@
                     </div>
 
                     <!-- Input area -->
-                    <form @submit.prevent="sendMessage()" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
+                    <div class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
                         <textarea x-model="userMessage" x-ref="messageInput" @paste="handlePaste($event)" @keydown.enter.prevent="sendMessage()" rows="1" placeholder="Nhập tin nhắn hoặc dán ảnh (Ctrl+V)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500 resize-none h-[38px]" :required="!selectedImage"></textarea>
                         
                         <!-- Mic Button -->
@@ -157,10 +157,10 @@
                             </svg>
                         </button>
                         
-                        <button type="submit" class="bg-sky-600 hover:bg-sky-500 transition px-3 py-2 rounded-xl flex items-center justify-center">
+                        <button type="button" @click="sendMessage()" class="bg-sky-600 hover:bg-sky-500 transition px-3 py-2 rounded-xl flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                         </button>
-                    </form>
+                    </div>
                 </div>
 
                 <!-- Chat Bubble Button -->
@@ -183,9 +183,14 @@
                         selectedImage: null,
                         selectedImageMime: null,
                         handlePaste(event) {
-                            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                            const clipboardData = event.clipboardData || window.clipboardData;
+                            if (!clipboardData) return;
+                            const items = clipboardData.items;
+                            let isImagePaste = false;
+                            
                             for (let i = 0; i < items.length; i++) {
                                 if (items[i].type.indexOf("image") !== -1) {
+                                    isImagePaste = true;
                                     const file = items[i].getAsFile();
                                     if (file) {
                                         if (file.size > 5 * 1024 * 1024) {
@@ -198,10 +203,12 @@
                                             this.selectedImage = e.target.result;
                                         };
                                         reader.readAsDataURL(file);
-                                        event.preventDefault();
                                         break;
                                     }
                                 }
+                            }
+                            if (isImagePaste) {
+                                event.preventDefault();
                             }
                         },
                         clearSelectedImage() {
