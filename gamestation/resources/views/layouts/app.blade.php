@@ -148,16 +148,7 @@
 
                     <!-- Input area -->
                     <form @submit.prevent="sendMessage()" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
-                        <input type="file" x-ref="imageInput" @change="handleImageUpload($event)" accept="image/*" class="hidden">
-                        
-                        <!-- Attach image button -->
-                        <button type="button" @click="$refs.imageInput.click()" class="bg-slate-800 hover:bg-slate-700 transition p-2 rounded-xl flex items-center justify-center text-white" title="Đính kèm ảnh">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375 0 11-.75 0 .375 0 01.75 0z" />
-                            </svg>
-                        </button>
-
-                        <input type="text" x-model="userMessage" placeholder="Nhập tin nhắn..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500" :required="!selectedImage">
+                        <input type="text" x-model="userMessage" @paste="handlePaste($event)" placeholder="Nhập tin nhắn hoặc dán ảnh (Ctrl+V)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500" :required="!selectedImage">
                         
                         <!-- Mic Button -->
                         <button type="button" @click="toggleSpeechRecognition()" :class="isListening ? 'bg-red-600 hover:bg-red-500 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'" class="transition p-2 rounded-xl flex items-center justify-center text-white" title="Nói để nhập văn bản">
@@ -191,27 +182,31 @@
                         recognition: null,
                         selectedImage: null,
                         selectedImageMime: null,
-                        handleImageUpload(event) {
-                            const file = event.target.files[0];
-                            if (file) {
-                                if (file.size > 5 * 1024 * 1024) {
-                                    alert("Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB.");
-                                    return;
+                        handlePaste(event) {
+                            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                            for (let i = 0; i < items.length; i++) {
+                                if (items[i].type.indexOf("image") !== -1) {
+                                    const file = items[i].getAsFile();
+                                    if (file) {
+                                        if (file.size > 5 * 1024 * 1024) {
+                                            alert("Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB.");
+                                            return;
+                                        }
+                                        this.selectedImageMime = file.type;
+                                        const reader = new FileReader();
+                                        reader.onload = (e) => {
+                                            this.selectedImage = e.target.result;
+                                        };
+                                        reader.readAsDataURL(file);
+                                        event.preventDefault();
+                                        break;
+                                    }
                                 }
-                                this.selectedImageMime = file.type;
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                    this.selectedImage = e.target.result;
-                                };
-                                reader.readAsDataURL(file);
                             }
                         },
                         clearSelectedImage() {
                             this.selectedImage = null;
                             this.selectedImageMime = null;
-                            if (this.$refs.imageInput) {
-                                this.$refs.imageInput.value = "";
-                            }
                         },
                         toggleSpeechRecognition() {
                             if (this.isListening) {
