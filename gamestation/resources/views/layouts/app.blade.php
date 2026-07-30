@@ -283,7 +283,7 @@
                         },
                         sendMessage() {
                             if (!this.userMessage.trim() && !this.selectedImage) return;
-                            const messageText = this.userMessage.trim() || "Gửi hình ảnh đính kèm";
+                            const messageText = this.userMessage.trim() || "";
                             const payload = {
                                 message: messageText
                             };
@@ -292,7 +292,7 @@
                             if (this.selectedImage) {
                                 payload.image = this.selectedImage;
                                 payload.image_mime = this.selectedImageMime;
-                                optimMsg = "![Ảnh đính kèm](" + this.selectedImage + ")\n" + messageText;
+                                optimMsg = "![Ảnh đính kèm](" + this.selectedImage + ")" + (messageText ? "\n" + messageText : "");
                             }
                             
                             this.userMessage = '';

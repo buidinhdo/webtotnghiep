@@ -25,13 +25,13 @@ class ChatbotController extends Controller
     public function sendMessage(Request $request)
     {
         $request->validate([
-            'message' => ['required', 'string', 'max:5000'],
+            'message' => ['nullable', 'string', 'max:5000'],
             'image' => ['nullable', 'string'],
             'image_mime' => ['nullable', 'string'],
         ]);
 
         $user = $request->user();
-        $userMessageText = trim($request->input('message'));
+        $userMessageText = $request->filled('message') ? trim($request->input('message')) : '';
 
         $savedMessageText = $userMessageText;
         if ($request->has('image') && $request->input('image')) {
@@ -51,7 +51,7 @@ class ChatbotController extends Controller
                     
                     // Format as markdown image + text
                     $imgUrl = asset('uploads/chatbot/' . $fileName);
-                    $savedMessageText = "![Ảnh đính kèm](" . $imgUrl . ")\n" . $userMessageText;
+                    $savedMessageText = "![Ảnh đính kèm](" . $imgUrl . ")" . (!empty($userMessageText) ? "\n" . $userMessageText : "");
                 }
             }
         }
