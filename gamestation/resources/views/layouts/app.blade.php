@@ -148,7 +148,7 @@
 
                     <!-- Input area -->
                     <form @submit.prevent="sendMessage()" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
-                        <input type="text" x-model="userMessage" @paste="handlePaste($event)" placeholder="Nhập tin nhắn hoặc dán ảnh (Ctrl+V)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500" :required="!selectedImage">
+                        <input type="text" x-model="userMessage" x-ref="messageInput" @paste="handlePaste($event)" placeholder="Nhập tin nhắn hoặc dán ảnh (Ctrl+V)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500" :required="!selectedImage">
                         
                         <!-- Mic Button -->
                         <button type="button" @click="toggleSpeechRecognition()" :class="isListening ? 'bg-red-600 hover:bg-red-500 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'" class="transition p-2 rounded-xl flex items-center justify-center text-white" title="Nói để nhập văn bản">
@@ -292,7 +292,7 @@
                             if (this.selectedImage) {
                                 payload.image = this.selectedImage;
                                 payload.image_mime = this.selectedImageMime;
-                                optimMsg = "📷 [Ảnh đính kèm] " + messageText;
+                                optimMsg = "![Ảnh đính kèm](" + this.selectedImage + ")\n" + messageText;
                             }
                             
                             this.userMessage = '';
@@ -308,6 +308,13 @@
                             
                             // Clear selected image preview
                             this.clearSelectedImage();
+                            
+                            // Refocus input field
+                            this.$nextTick(() => {
+                                if (this.$refs.messageInput) {
+                                    this.$refs.messageInput.focus();
+                                }
+                            });
 
                             fetch('{{ route('chatbot.send') }}', {
                                 method: 'POST',

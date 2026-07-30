@@ -35,7 +35,25 @@ class ChatbotController extends Controller
 
         $savedMessageText = $userMessageText;
         if ($request->has('image') && $request->input('image')) {
-            $savedMessageText = "📷 [Ảnh đính kèm] " . $userMessageText;
+            $base64Data = $request->input('image');
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $typeMatches)) {
+                $imageType = strtolower($typeMatches[1]);
+                $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
+                $decodedData = base64_decode($base64Data);
+                
+                if ($decodedData !== false) {
+                    $fileName = 'chatbot_' . time() . '_' . uniqid() . '.' . $imageType;
+                    $publicPath = public_path('uploads/chatbot');
+                    if (!file_exists($publicPath)) {
+                        mkdir($publicPath, 0755, true);
+                    }
+                    file_put_contents($publicPath . '/' . $fileName, $decodedData);
+                    
+                    // Format as markdown image + text
+                    $imgUrl = asset('uploads/chatbot/' . $fileName);
+                    $savedMessageText = "![Ảnh đính kèm](" . $imgUrl . ")\n" . $userMessageText;
+                }
+            }
         }
 
         // 1. Save user's message
