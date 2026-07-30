@@ -289,6 +289,125 @@ class ChatbotController extends Controller
                     }
                 }
 
+                // Detect Used Game Trade-in and Rental Intents
+                $rentalContext = "";
+                $tradeInContext = "";
+                
+                $lowerMsg = mb_strtolower($userMessageText);
+                $cleanMsg = preg_replace('/[^\p{L}\p{N}\s]/u', '', $lowerMsg);
+
+                // 1. Rental Intent Detection
+                $isRentalQuery = preg_match('/(?:thuê|thue|cho\s*thuê|cho\s*thue|thuê\s*đĩa|thuê\s*game)/u', $lowerMsg);
+                if ($isRentalQuery) {
+                    $rentalProduct = null;
+                    foreach ($products as $p) {
+                        $cleanName = preg_replace('/[^\p{L}\p{N}\s]/u', '', mb_strtolower($p->name));
+                        if (str_contains($cleanMsg, $cleanName)) {
+                            $rentalProduct = $p;
+                            break;
+                        }
+                    }
+                    if (!$rentalProduct && session()->has('chatbot_current_product_id')) {
+                        $rentalProduct = \App\Models\Product::find(session('chatbot_current_product_id'));
+                    }
+                    
+                    if ($rentalProduct) {
+                        $days = 3;
+                        if (preg_match('/(\d+)\s*(?:ngày|ngay|day)/u', $lowerMsg, $dayMatches)) {
+                            $days = max(1, (int)$dayMatches[1]);
+                        }
+                        
+                        $dailyFee = (float)$rentalProduct->price * 0.01;
+                        $rentalFee = $dailyFee * $days;
+                        $deposit = (float)$rentalProduct->price;
+                        
+                        $rentalContext = "HỆ THỐNG DỊCH VỤ CHO THUÊ ĐĨA GAME:\n"
+                            . "- Sản phẩm khách muốn thuê: {$rentalProduct->name}\n"
+                            . "- Hệ máy: " . strtoupper($rentalProduct->platform ?? 'N/A') . "\n"
+                            . "- Số ngày thuê: {$days} ngày\n"
+                            . "- Giá trị cọc đĩa (100% giá gốc): " . number_format($deposit, 0, ',', '.') . "đ\n"
+                            . "- Phí thuê mỗi ngày (1%): " . number_format($dailyFee, 0, ',', '.') . "đ/ngày\n"
+                            . "- Tổng phí thuê tạm tính: " . number_format($rentalFee, 0, ',', '.') . "đ\n"
+                            . "- Quy định thuê: Khách cần thanh toán trước tiền cọc và phí thuê. Khi trả lại đĩa nguyên vẹn, shop sẽ hoàn lại 100% tiền cọc thế chân.\n"
+                            . "- Yêu cầu AI: Hãy tư vấn chi tiết các mức cọc, phí thuê này và hướng dẫn khách mang đĩa hoặc ship đĩa một cách lịch sự, thân thiện.";
+                    }
+                }
+
+                // 2. Trade-in used game Detection
+                $isTradeInQuery = preg_match('/(?:thu\s*cũ|thu\s*cu|đổi\s*mới|đổi\s*moi|đổi\s*đĩa|đổi\s*game|định\s*giá|thu\s*mua|bán\s*đĩa|bán\s*lại)/u', $lowerMsg);
+                if ($isTradeInQuery) {
+                    $matchedProds = [];
+                    foreach ($products as $p) {
+                        $cleanName = preg_replace('/[^\p{L}\p{N}\s]/u', '', mb_strtolower($p->name));
+                        if (str_contains($cleanMsg, $cleanName)) {
+                            $matchedProds[] = $p;
+                        }
+                    }
+                    
+                    $oldProduct = null;
+                    $newProduct = null;
+                    
+                    if (count($matchedProds) >= 2) {
+                        if (preg_match('/(?:đổi|doi|bán|ban)\s+(.+?)\s+(?:lấy|sang|đổi lấy|lay|sang)\s+(.+)/i', $lowerMsg, $matches)) {
+                            $part1 = preg_replace('/[^\p{L}\p{N}\s]/u', '', mb_strtolower($matches[1]));
+                            $part2 = preg_replace('/[^\p{L}\p{N}\s]/u', '', mb_strtolower($matches[2]));
+                            
+                            foreach ($matchedProds as $mp) {
+                                $cleanMpName = preg_replace('/[^\p{L}\p{N}\s]/u', '', mb_strtolower($mp->name));
+                                if (str_contains($part1, $cleanMpName)) {
+                                    $oldProduct = $mp;
+                                } elseif (str_contains($part2, $cleanMpName)) {
+                                    $newProduct = $mp;
+                                }
+                            }
+                        }
+                        
+                        if (!$oldProduct || !$newProduct) {
+                            $oldProduct = $matchedProds[0];
+                            $newProduct = $matchedProds[1];
+                        }
+                    } elseif (count($matchedProds) === 1) {
+                        $oldProduct = $matchedProds[0];
+                    } else {
+                        if (session()->has('chatbot_current_product_id')) {
+                            $oldProduct = \App\Models\Product::find(session('chatbot_current_product_id'));
+                        }
+                    }
+                    
+                    if ($oldProduct) {
+                        $grade = 'A';
+                        $percent = 75;
+                        $gradeName = "Loại A (Mới 99%, đầy đủ hộp đĩa, không trầy xước)";
+                        
+                        if (preg_match('/(?:90|95|xước|trầy|loại\s*b|loai\s*b)/u', $lowerMsg)) {
+                            $grade = 'B';
+                            $percent = 60;
+                            $gradeName = "Loại B (Mới 90-95%, trầy xước nhẹ hoặc hộp cũ)";
+                        } elseif (preg_match('/(?:đĩa\s*trần|dia\s*tran|ko\s*hộp|không\s*hộp|loại\s*c|loai\s*c)/u', $lowerMsg)) {
+                            $grade = 'C';
+                            $percent = 45;
+                            $gradeName = "Loại C (Chỉ có đĩa trần, không kèm hộp sách)";
+                        }
+                        
+                        $tradeInVal = (float)$oldProduct->price * ($percent / 100);
+                        
+                        $tradeInContext = "HỆ THỐNG DỊCH VỤ THU CŨ ĐỔI MỚI (TRADE-IN):\n"
+                            . "- Sản phẩm cũ khách hàng muốn bán/đổi: {$oldProduct->name}\n"
+                            . "- Phân loại chất lượng đĩa cũ: {$gradeName}\n"
+                            . "- Định giá thu mua đĩa cũ (tạm tính {$percent}% giá trị đĩa mới): " . number_format($tradeInVal, 0, ',', '.') . "đ\n";
+                            
+                        if ($newProduct) {
+                            $dueAmount = max(0.0, (float)$newProduct->price - $tradeInVal);
+                            $tradeInContext .= "- Sản phẩm mới khách muốn đổi lấy: {$newProduct->name}\n"
+                                . "- Giá niêm yết của đĩa mới: " . number_format($newProduct->price, 0, ',', '.') . "đ\n"
+                                . "- Số tiền bù chênh lệch khách cần đóng: " . number_format($dueAmount, 0, ',', '.') . "đ\n";
+                        }
+                        
+                        $tradeInContext .= "- Quy trình giao dịch: Khách mang đĩa cũ qua shop để kỹ thuật viên kiểm tra trực tiếp tình trạng đĩa và hoàn thành giao dịch đổi đĩa hoặc nhận tiền mặt.\n"
+                            . "- Yêu cầu AI: Hãy tư vấn chi tiết mức định giá thu mua và số tiền bù (nếu có game đổi mới) này một cách lịch sự, thân thiện.";
+                    }
+                }
+
                 $systemInstruction = "Bạn là trợ lý ảo AI thông minh và thân thiện của cửa hàng GameStation.
 Nhiệm vụ của bạn là trả lời các câu hỏi của khách hàng về sản phẩm, chính sách của shop một cách tự nhiên, lịch sự bằng tiếng Việt.
 Hãy xưng hô là 'Shop' và gọi khách hàng là 'bạn'.
@@ -297,6 +416,8 @@ Hãy xưng hô là 'Shop' và gọi khách hàng là 'bạn'.
 Dưới đây là danh sách sản phẩm thực tế của cửa hàng kèm đường link chi tiết và thông số chi tiết:
 {$catalog}
 
+" . (!empty($rentalContext) ? "Dữ liệu dịch vụ thuê đĩa game tính toán cho yêu cầu của khách hàng:\n{$rentalContext}\n" : "") . "
+" . (!empty($tradeInContext) ? "Dữ liệu dịch vụ thu cũ đổi mới đĩa game tính toán cho khách hàng:\n{$tradeInContext}\n" : "") . "
 " . (!empty($orderContext) ? "Dữ liệu đơn hàng của khách hàng hiện tại:\n{$orderContext}\n" : "") . "
 " . (!empty($reviewsContext) ? "Dữ liệu đánh giá của sản phẩm đang được nói đến:\n{$reviewsContext}\n" : "") . "
 " . (!empty($cartContext) ? "Dữ liệu giỏ hàng của khách hàng hiện tại:\n{$cartContext}\n" : "") . "
@@ -305,6 +426,7 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Đối 
 Đối với câu hỏi về nhận xét hoặc đánh giá của sản phẩm, hãy sử dụng 'Dữ liệu đánh giá của sản phẩm đang được nói đến' ở trên để tóm tắt điểm đánh giá trung bình và các nhận xét cụ thể của khách hàng một cách trung thực, khách quan.
 Đối với câu hỏi về giỏ hàng (ví dụ: giỏ hàng có gì, tổng tiền bao nhiêu, gợi ý game phù hợp với giỏ hàng...), hãy sử dụng 'Dữ liệu giỏ hàng của khách hàng hiện tại' ở trên để trả lời chi tiết và đề xuất các game tương tự hoặc phù hợp trên cùng hệ máy để khách mua thêm.
 Đối với câu hỏi về phí ship và khoảng cách giao hàng tạm tính đến một địa điểm, hãy sử dụng 'Dữ liệu dự toán vận chuyển và khoảng cách tạm tính cho khách hàng' ở trên để báo giá cước và quãng đường thực tế một cách lịch sự, chi tiết.
+Đối với câu hỏi về dịch vụ thuê đĩa game hoặc thu cũ đổi mới đĩa game, hãy sử dụng 'Dữ liệu dịch vụ thuê đĩa game' hoặc 'Dữ liệu dịch vụ thu cũ đổi mới đĩa game' tương ứng ở trên để báo giá cọc, phí thuê, định giá thu mua đĩa cũ và số tiền cần bù chênh lệch một cách chi tiết, chính xác và chuyên nghiệp.
 Đặc biệt, khi khách hàng nhờ tư vấn hoặc đề xuất sản phẩm theo nhu cầu (ví dụ: tìm game theo thể loại, hệ máy, mức giá, sở thích hoặc số người chơi...), hãy phân tích kỹ danh sách sản phẩm ở trên để chọn lọc, tư vấn và gợi ý các sản phẩm phù hợp nhất kèm theo đường dẫn markdown của từng game.";
 
                 // Get conversation history (last 10 messages)
