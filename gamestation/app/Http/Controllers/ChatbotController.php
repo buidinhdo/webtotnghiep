@@ -25,42 +25,17 @@ class ChatbotController extends Controller
     public function sendMessage(Request $request)
     {
         $request->validate([
-            'message' => ['nullable', 'string', 'max:5000'],
-            'image' => ['nullable', 'string'],
-            'image_mime' => ['nullable', 'string'],
+            'message' => ['required', 'string', 'max:5000'],
         ]);
 
         $user = $request->user();
-        $userMessageText = $request->filled('message') ? trim($request->input('message')) : '';
-
-        $savedMessageText = $userMessageText;
-        if ($request->has('image') && $request->input('image')) {
-            $base64Data = $request->input('image');
-            if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $typeMatches)) {
-                $imageType = strtolower($typeMatches[1]);
-                $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
-                $decodedData = base64_decode($base64Data);
-                
-                if ($decodedData !== false) {
-                    $fileName = 'chatbot_' . time() . '_' . uniqid() . '.' . $imageType;
-                    $publicPath = public_path('uploads/chatbot');
-                    if (!file_exists($publicPath)) {
-                        mkdir($publicPath, 0755, true);
-                    }
-                    file_put_contents($publicPath . '/' . $fileName, $decodedData);
-                    
-                    // Format as markdown image + text
-                    $imgUrl = asset('uploads/chatbot/' . $fileName);
-                    $savedMessageText = "![Ảnh đính kèm](" . $imgUrl . ")" . (!empty($userMessageText) ? "\n" . $userMessageText : "");
-                }
-            }
-        }
+        $userMessageText = trim($request->input('message'));
 
         // 1. Save user's message
         $userMessage = ChatbotMessage::create([
             'user_id' => $user->id,
             'sender' => 'user',
-            'message' => $savedMessageText,
+            'message' => $userMessageText,
         ]);
 
         $botReply = null;
@@ -456,11 +431,6 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Tuyệt
 Đối với câu hỏi về giỏ hàng (ví dụ: giỏ hàng có gì, tổng tiền bao nhiêu, gợi ý game phù hợp với giỏ hàng...), hãy sử dụng 'Dữ liệu giỏ hàng của khách hàng hiện tại' ở trên để trả lời chi tiết và đề xuất các game tương tự hoặc phù hợp trên cùng hệ máy để khách mua thêm.
 Đối với câu hỏi về phí ship và khoảng cách giao hàng tạm tính đến một địa điểm, hãy sử dụng 'Dữ liệu dự toán vận chuyển và khoảng cách tạm tính cho khách hàng' ở trên để báo giá cước và quãng đường thực tế một cách lịch sự, chi tiết.
 Đối với câu hỏi về dịch vụ thuê đĩa game hoặc thu cũ đổi mới đĩa game, hãy sử dụng 'Dữ liệu dịch vụ thuê đĩa game' hoặc 'Dữ liệu dịch vụ thu cũ đổi mới đĩa game' tương ứng ở trên để báo giá cọc, phí thuê, định giá thu mua đĩa cũ và số tiền cần bù chênh lệch một cách chi tiết, chính xác và chuyên nghiệp. Nếu khách hỏi chung chung về chính sách (chưa có tên game cụ thể), hãy trả lời XÁC NHẬN là shop CÓ hỗ trợ dịch vụ này và giới thiệu ngắn gọn quy định chung ở phần 'CHÍNH SÁCH DỊCH VỤ CỦA SHOP' để khách nắm thông tin.
-Đối với trường hợp khách hàng tải lên HÌNH ẢNH đính kèm để hỏi tư vấn hoặc thu cũ/thuê game:
-1. Hãy quan sát hình ảnh để tự nhận diện tên game (đọc chữ hiển thị trên bìa đĩa).
-2. Tra cứu tên game đó trong danh sách sản phẩm ở trên để lấy giá bán gốc tại shop.
-3. Nếu là hỏi về dịch vụ Thu cũ đổi mới, hãy tự đánh giá sơ bộ tình trạng đĩa từ ảnh (mới 99% - Loại A, xước nhẹ - Loại B, đĩa trần - Loại C). Thực hiện tính toán cụ thể dựa trên tỷ lệ % ở phần CHÍNH SÁCH DỊCH VỤ CỦA SHOP (ví dụ: lấy giá đĩa mới nhân với 75% cho loại A) để đưa ra con số báo giá thu mua tạm tính cụ thể cho khách hàng ngay trong câu trả lời (Ví dụ: 'Đối với đĩa Final Fantasy XVI giá bán gốc tại shop là 1.600.000đ, shop thu mua lại Loại A 99% giá tạm tính là 1.200.000đ'). Hãy luôn tính toán và trả lời cụ thể con số, đừng trả lời chung chung hoặc né tránh báo giá khi đã có thông tin game và giá gốc trong danh sách sản phẩm ở trên.
-4. Nếu là hỏi thuê game qua ảnh, hãy tính phí thuê (1%/ngày) dựa trên giá đĩa trong danh sách sản phẩm ở trên và số ngày khách yêu cầu thuê (nếu không nêu thì mặc định 3 ngày), tính tổng phí thuê cùng giá tiền đặt cọc tương đương 100% giá gốc sản phẩm để báo cho khách rõ ràng.
 Đặc biệt, khi khách hàng nhờ tư vấn hoặc đề xuất sản phẩm theo nhu cầu (ví dụ: tìm game theo thể loại, hệ máy, mức giá, sở thích hoặc số người chơi...), hãy phân tích kỹ danh sách sản phẩm ở trên để chọn lọc, tư vấn và gợi ý các sản phẩm phù hợp nhất kèm theo đường dẫn markdown của từng game.";
 
                 // Get conversation history (last 10 messages)
@@ -490,44 +460,12 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Tuyệt
                     array_shift($payloadContents);
                 }
 
-                if (!empty($payloadContents)) {
-                    $lastIdx = count($payloadContents) - 1;
-                    if ($payloadContents[$lastIdx]['role'] === 'user' && $request->has('image') && $request->input('image')) {
-                        $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $request->input('image'));
-                        $mimeType = $request->input('image_mime') ?? 'image/jpeg';
-                        
-                        $payloadContents[$lastIdx]['parts'] = [
-                            [
-                                'inlineData' => [
-                                    'mimeType' => $mimeType,
-                                    'data' => $base64Data
-                                ]
-                            ],
-                            [
-                                'text' => $userMessageText
-                            ]
-                        ];
-                    }
-                }
-
                 if (empty($payloadContents)) {
-                    $currentParts = [];
-                    if ($request->has('image') && $request->input('image')) {
-                        $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $request->input('image'));
-                        $mimeType = $request->input('image_mime') ?? 'image/jpeg';
-                        $currentParts[] = [
-                            'inlineData' => [
-                                'mimeType' => $mimeType,
-                                'data' => $base64Data
-                            ]
-                        ];
-                    }
-                    $currentParts[] = [
-                        'text' => $userMessageText
-                    ];
                     $payloadContents[] = [
                         'role' => 'user',
-                        'parts' => $currentParts
+                        'parts' => [
+                            ['text' => $userMessageText]
+                        ]
                     ];
                 }
 

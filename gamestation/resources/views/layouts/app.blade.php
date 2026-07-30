@@ -134,34 +134,24 @@
                                 <span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
                             </div>
                         </div>
-                        <!-- Image Preview Area -->
-                        <div x-show="selectedImage" class="px-3 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between" style="display: none;">
-                            <div class="flex items-center gap-2">
-                                <img :src="selectedImage" class="w-10 h-10 object-cover rounded-lg border border-slate-700 shadow-md">
-                                <span class="text-[10px] text-slate-400">Ảnh sẵn sàng gửi</span>
-                            </div>
-                            <button type="button" @click="clearSelectedImage()" class="text-rose-500 hover:text-rose-400 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
                     </div>
-
-                    <!-- Input area -->
-                    <div class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
-                        <textarea x-model="userMessage" x-ref="messageInput" @paste="handlePaste($event)" @keydown.enter="if (userMessage.trim()) { $event.preventDefault(); sendMessage(); }" rows="1" placeholder="Nhập tin nhắn hoặc dán ảnh (Ctrl+V)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500 resize-none h-[38px]" :required="!selectedImage"></textarea>
-                        
-                        <!-- Mic Button -->
-                        <button type="button" @click="toggleSpeechRecognition()" :class="isListening ? 'bg-red-600 hover:bg-red-500 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'" class="transition p-2 rounded-xl flex items-center justify-center text-white" title="Nói để nhập văn bản">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path>
-                            </svg>
-                        </button>
-                        
-                        <button type="button" @click="sendMessage()" class="bg-sky-600 hover:bg-sky-500 transition px-3 py-2 rounded-xl flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                        </button>
-                    </div>
-                </div>
+ 
+                     <!-- Input area -->
+                     <form @submit.prevent="sendMessage()" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
+                         <input type="text" x-model="userMessage" x-ref="messageInput" placeholder="Nhập tin nhắn..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-500" required>
+                         
+                         <!-- Mic Button -->
+                         <button type="button" @click="toggleSpeechRecognition()" :class="isListening ? 'bg-red-600 hover:bg-red-500 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'" class="transition p-2 rounded-xl flex items-center justify-center text-white" title="Nói để nhập văn bản">
+                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path>
+                             </svg>
+                         </button>
+                         
+                         <button type="submit" class="bg-sky-600 hover:bg-sky-500 transition px-3 py-2 rounded-xl flex items-center justify-center">
+                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                         </button>
+                     </form>
+                 </div>
 
                 <!-- Chat Bubble Button -->
                 <button @click="chatOpen = !chatOpen; scrollToBottom();" class="w-14 h-14 rounded-full bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 transition shadow-2xl flex items-center justify-center text-white relative hover:scale-105 transform duration-300">
@@ -180,41 +170,7 @@
                         pollingInterval: null,
                         isListening: false,
                         recognition: null,
-                        selectedImage: null,
-                        selectedImageMime: null,
-                        handlePaste(event) {
-                            const clipboardData = event.clipboardData || window.clipboardData;
-                            if (!clipboardData) return;
-                            const items = clipboardData.items;
-                            let isImagePaste = false;
-                            
-                            for (let i = 0; i < items.length; i++) {
-                                if (items[i].type.indexOf("image") !== -1) {
-                                    isImagePaste = true;
-                                    const file = items[i].getAsFile();
-                                    if (file) {
-                                        if (file.size > 5 * 1024 * 1024) {
-                                            alert("Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB.");
-                                            return;
-                                        }
-                                        this.selectedImageMime = file.type;
-                                        const reader = new FileReader();
-                                        reader.onload = (e) => {
-                                            this.selectedImage = e.target.result;
-                                        };
-                                        reader.readAsDataURL(file);
-                                        break;
-                                    }
-                                }
-                            }
-                            if (isImagePaste) {
-                                event.preventDefault();
-                            }
-                        },
-                        clearSelectedImage() {
-                            this.selectedImage = null;
-                            this.selectedImageMime = null;
-                        },
+
                         toggleSpeechRecognition() {
                             if (this.isListening) {
                                 if (this.recognition) {
@@ -289,18 +245,11 @@
                                 });
                         },
                         sendMessage() {
-                            if (!this.userMessage.trim() && !this.selectedImage) return;
-                            const messageText = this.userMessage.trim() || "";
+                            if (!this.userMessage.trim()) return;
+                            const messageText = this.userMessage.trim();
                             const payload = {
                                 message: messageText
                             };
-                            
-                            let optimMsg = messageText;
-                            if (this.selectedImage) {
-                                payload.image = this.selectedImage;
-                                payload.image_mime = this.selectedImageMime;
-                                optimMsg = "![Ảnh đính kèm](" + this.selectedImage + ")" + (messageText ? "\n" + messageText : "");
-                            }
                             
                             this.userMessage = '';
                             this.loading = true;
@@ -308,13 +257,10 @@
                             // Optimistically add user message to list
                             this.messages.push({
                                 sender: 'user',
-                                message: optimMsg,
+                                message: messageText,
                                 created_at: new Date().toISOString()
                             });
                             this.scrollToBottom();
-                            
-                            // Clear selected image preview
-                            this.clearSelectedImage();
                             
                             // Refocus input field
                             this.$nextTick(() => {
