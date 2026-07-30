@@ -413,6 +413,10 @@ Nhiệm vụ của bạn là trả lời các câu hỏi của khách hàng về
 Hãy xưng hô là 'Shop' và gọi khách hàng là 'bạn'.
 Địa chỉ cửa hàng: {$storeAddress}. Số điện thoại: {$storePhone}.
 
+CHÍNH SÁCH DỊCH VỤ CỦA SHOP (HÃY LUÔN TRẢ LỜI LÀ CÓ HỖ TRỢ):
+- Shop CÓ hỗ trợ dịch vụ cho thuê đĩa game (phí thuê 1% giá gốc đĩa/ngày, đặt cọc thế chân 100% giá trị đĩa, tối thiểu 3 ngày).
+- Shop CÓ hỗ trợ dịch vụ thu cũ đổi mới đĩa game (thu mua lại đĩa cũ: Loại A 99% giá 75% đĩa mới, Loại B xước nhẹ 60% đĩa mới, Loại C đĩa trần 45% đĩa mới).
+
 Dưới đây là danh sách sản phẩm thực tế của cửa hàng kèm đường link chi tiết và thông số chi tiết:
 {$catalog}
 
@@ -426,7 +430,7 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Đối 
 Đối với câu hỏi về nhận xét hoặc đánh giá của sản phẩm, hãy sử dụng 'Dữ liệu đánh giá của sản phẩm đang được nói đến' ở trên để tóm tắt điểm đánh giá trung bình và các nhận xét cụ thể của khách hàng một cách trung thực, khách quan.
 Đối với câu hỏi về giỏ hàng (ví dụ: giỏ hàng có gì, tổng tiền bao nhiêu, gợi ý game phù hợp với giỏ hàng...), hãy sử dụng 'Dữ liệu giỏ hàng của khách hàng hiện tại' ở trên để trả lời chi tiết và đề xuất các game tương tự hoặc phù hợp trên cùng hệ máy để khách mua thêm.
 Đối với câu hỏi về phí ship và khoảng cách giao hàng tạm tính đến một địa điểm, hãy sử dụng 'Dữ liệu dự toán vận chuyển và khoảng cách tạm tính cho khách hàng' ở trên để báo giá cước và quãng đường thực tế một cách lịch sự, chi tiết.
-Đối với câu hỏi về dịch vụ thuê đĩa game hoặc thu cũ đổi mới đĩa game, hãy sử dụng 'Dữ liệu dịch vụ thuê đĩa game' hoặc 'Dữ liệu dịch vụ thu cũ đổi mới đĩa game' tương ứng ở trên để báo giá cọc, phí thuê, định giá thu mua đĩa cũ và số tiền cần bù chênh lệch một cách chi tiết, chính xác và chuyên nghiệp.
+Đối với câu hỏi về dịch vụ thuê đĩa game hoặc thu cũ đổi mới đĩa game, hãy sử dụng 'Dữ liệu dịch vụ thuê đĩa game' hoặc 'Dữ liệu dịch vụ thu cũ đổi mới đĩa game' tương ứng ở trên để báo giá cọc, phí thuê, định giá thu mua đĩa cũ và số tiền cần bù chênh lệch một cách chi tiết, chính xác và chuyên nghiệp. Nếu khách hỏi chung chung về chính sách (chưa có tên game cụ thể), hãy trả lời XÁC NHẬN là shop CÓ hỗ trợ dịch vụ này và giới thiệu ngắn gọn quy định chung ở phần 'CHÍNH SÁCH DỊCH VỤ CỦA SHOP' để khách nắm thông tin.
 Đặc biệt, khi khách hàng nhờ tư vấn hoặc đề xuất sản phẩm theo nhu cầu (ví dụ: tìm game theo thể loại, hệ máy, mức giá, sở thích hoặc số người chơi...), hãy phân tích kỹ danh sách sản phẩm ở trên để chọn lọc, tư vấn và gợi ý các sản phẩm phù hợp nhất kèm theo đường dẫn markdown của từng game.";
 
                 // Get conversation history (last 10 messages)
