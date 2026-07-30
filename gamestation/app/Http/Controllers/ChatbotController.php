@@ -72,7 +72,7 @@ class ChatbotController extends Controller
                 $storeAddress = \App\Models\Setting::get('store_address', config('shipping.shop_address', 'Hà Nội'));
                 $storePhone = \App\Models\Setting::get('store_phone', '0123456789');
 
-                $products = Product::with(['publisher', 'category', 'images'])->where('is_active', true)->get();
+                $products = Product::with(['publisher', 'category', 'images'])->where('is_active', true)->orderBy('created_at', 'desc')->get();
 
                 $catalog = "";
                 foreach ($products as $p) {
@@ -442,7 +442,7 @@ CHÍNH SÁCH DỊCH VỤ CỦA SHOP (HÃY LUÔN TRẢ LỜI LÀ CÓ HỖ TRỢ):
 - Shop CÓ hỗ trợ dịch vụ cho thuê đĩa game (phí thuê 1% giá gốc đĩa/ngày, đặt cọc thế chân 100% giá trị đĩa, tối thiểu 3 ngày).
 - Shop CÓ hỗ trợ dịch vụ thu cũ đổi mới đĩa game (thu mua lại đĩa cũ: Loại A 99% giá 75% đĩa mới, Loại B xước nhẹ 60% đĩa mới, Loại C đĩa trần 45% đĩa mới).
 
-Dưới đây là danh sách sản phẩm thực tế của cửa hàng kèm đường link chi tiết và thông số chi tiết:
+Dưới đây là danh sách sản phẩm thực tế của cửa hàng kèm đường link chi tiết và thông số chi tiết (danh sách này được sắp xếp theo thứ tự mới nhất ở đầu danh sách, nghĩa là sản phẩm vừa được thêm mới gần đây nhất của shop sẽ luôn ở vị trí đầu tiên của danh sách):
 {$catalog}
 
 " . (!empty($rentalContext) ? "Dữ liệu dịch vụ thuê đĩa game tính toán cho yêu cầu của khách hàng:\n{$rentalContext}\n" : "") . "
