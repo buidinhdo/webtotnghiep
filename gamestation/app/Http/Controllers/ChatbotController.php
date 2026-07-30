@@ -26,16 +26,23 @@ class ChatbotController extends Controller
     {
         $request->validate([
             'message' => ['required', 'string', 'max:5000'],
+            'image' => ['nullable', 'string'],
+            'image_mime' => ['nullable', 'string'],
         ]);
 
         $user = $request->user();
         $userMessageText = trim($request->input('message'));
 
+        $savedMessageText = $userMessageText;
+        if ($request->has('image') && $request->input('image')) {
+            $savedMessageText = "📷 [Ảnh đính kèm] " . $userMessageText;
+        }
+
         // 1. Save user's message
         $userMessage = ChatbotMessage::create([
             'user_id' => $user->id,
             'sender' => 'user',
-            'message' => $userMessageText,
+            'message' => $savedMessageText,
         ]);
 
         $botReply = null;
@@ -460,12 +467,44 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Tuyệt
                     array_shift($payloadContents);
                 }
 
+                if (!empty($payloadContents)) {
+                    $lastIdx = count($payloadContents) - 1;
+                    if ($payloadContents[$lastIdx]['role'] === 'user' && $request->has('image') && $request->input('image')) {
+                        $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $request->input('image'));
+                        $mimeType = $request->input('image_mime') ?? 'image/jpeg';
+                        
+                        $payloadContents[$lastIdx]['parts'] = [
+                            [
+                                'inlineData' => [
+                                    'mimeType' => $mimeType,
+                                    'data' => $base64Data
+                                ]
+                            ],
+                            [
+                                'text' => $userMessageText
+                            ]
+                        ];
+                    }
+                }
+
                 if (empty($payloadContents)) {
+                    $currentParts = [];
+                    if ($request->has('image') && $request->input('image')) {
+                        $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $request->input('image'));
+                        $mimeType = $request->input('image_mime') ?? 'image/jpeg';
+                        $currentParts[] = [
+                            'inlineData' => [
+                                'mimeType' => $mimeType,
+                                'data' => $base64Data
+                            ]
+                        ];
+                    }
+                    $currentParts[] = [
+                        'text' => $userMessageText
+                    ];
                     $payloadContents[] = [
                         'role' => 'user',
-                        'parts' => [
-                            ['text' => $userMessageText]
-                        ]
+                        'parts' => $currentParts
                     ];
                 }
 
