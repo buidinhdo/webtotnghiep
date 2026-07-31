@@ -47,16 +47,15 @@ class ChatbotController extends Controller
 
         $lowerMessage = mb_strtolower($userMessageText);
 
-        // Intent detection: Checkout/Cart Redirect
-        if (preg_match('/(?:thanh\s*toán|thanh\s*toan|đặt\s*hàng|dat\s*hang)/u', $lowerMessage)) {
-            $action = 'redirect';
-            $redirectUrl = route('checkout.index');
-            $botReply = "Dạ, Shop đang chuyển hướng bạn đến trang thanh toán trong giây lát...";
-        } elseif (preg_match('/(?:giỏ\s*hàng|gio\s*hang|mở\s*giỏ|mo\s*gio|xem\s*giỏ|xem\s*gio)/u', $lowerMessage)) {
-            $action = 'redirect';
-            $redirectUrl = route('cart.index');
-            $botReply = "Dạ, Shop đang mở trang giỏ hàng của bạn...";
-        } elseif (preg_match('/(?:thêm|mua|bỏ)\s*(?:vào)?\s*(?:giỏ|gio)\s*(?:hàng|hang)?/u', $lowerMessage)) {
+        $isAddCart = false;
+        if (preg_match('/(?:giỏ|gio)/u', $lowerMessage) && preg_match('/(?:thêm|bỏ|cho|vào|cất)/u', $lowerMessage)) {
+            $isAddCart = true;
+        } elseif (preg_match('/(?:mua|đặt\s*mua|order|lấy|mua\s*game|mua\s*đĩa|mua\s*máy)/u', $lowerMessage) && !preg_match('/(?:thanh\s*toán|đơn\s*hàng|don\s*hang)/u', $lowerMessage)) {
+            $isAddCart = true;
+        }
+
+        // Intent detection: Add to cart
+        if ($isAddCart) {
             $cleanString = preg_replace('/[^\p{L}\p{N}\s]/u', '', $lowerMessage);
             $cleanString = preg_replace('/\b(?:thêm|mua|bỏ|vào|giỏ|hàng|gio|hang)\b/u', '', $cleanString);
             $tokens = array_filter(explode(' ', $cleanString));
@@ -115,6 +114,14 @@ class ChatbotController extends Controller
             } else {
                 $botReply = "Bạn muốn thêm game nào vào giỏ hàng ạ? Hãy nói tên game cụ thể để Shop tìm giúp nhé.";
             }
+        } elseif (preg_match('/(?:thanh\s*toán|thanh\s*toan|đặt\s*hàng|dat\s*hang)/u', $lowerMessage)) {
+            $action = 'redirect';
+            $redirectUrl = route('checkout.index');
+            $botReply = "Dạ, Shop đang chuyển hướng bạn đến trang thanh toán trong giây lát...";
+        } elseif (preg_match('/(?:giỏ\s*hàng|gio\s*hang|mở\s*giỏ|mo\s*gio|xem\s*giỏ|xem\s*gio)/u', $lowerMessage)) {
+            $action = 'redirect';
+            $redirectUrl = route('cart.index');
+            $botReply = "Dạ, Shop đang mở trang giỏ hàng của bạn...";
         }
 
         // Try using Google Gemini API first
