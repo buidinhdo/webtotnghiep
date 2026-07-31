@@ -39,94 +39,10 @@ class ChatbotController extends Controller
         ]);
 
         $botReply = null;
-        $action = null;
-        $redirectUrl = null;
-        $productId = null;
-        $productName = null;
-        $cartCount = null;
-
-        $lowerMessage = mb_strtolower($userMessageText);
-
-        $isAddCart = false;
-        if (preg_match('/(?:giỏ|gio)/u', $lowerMessage) && preg_match('/(?:thêm|bỏ|cho|vào|cất)/u', $lowerMessage)) {
-            $isAddCart = true;
-        } elseif (preg_match('/(?:mua|đặt\s*mua|order|lấy|mua\s*game|mua\s*đĩa|mua\s*máy)/u', $lowerMessage) && !preg_match('/(?:thanh\s*toán|đơn\s*hàng|don\s*hang)/u', $lowerMessage)) {
-            $isAddCart = true;
-        }
-
-        // Intent detection: Add to cart
-        if ($isAddCart) {
-            $cleanString = preg_replace('/[^\p{L}\p{N}\s]/u', '', $lowerMessage);
-            $cleanString = preg_replace('/\b(?:thêm|mua|bỏ|vào|giỏ|hàng|gio|hang)\b/u', '', $cleanString);
-            $tokens = array_filter(explode(' ', $cleanString));
-            
-            $stopWords = [
-                'có', 'không', 'tìm', 'nút', 'thế', 'nào', 'tư', 'vấn', 
-                'cho', 'hỏi', 'tôi', 'ở', 'đâu', 'shop', 'cửa', 'hàng', 'admin', 'ad', 'ơi', 
-                'nhỉ', 'với', 'cần', 'muốn', 'hiện', 'tại', 'bên', 'mình', 'web', 'sản', 'phẩm', 
-                'đĩa', 'máy', 'được', 'lấy', 'cho', 'ra', 'sao', 'này', 'kia', 'đó', 'ạ', 'ko', 'kg',
-                'giá', 'bao', 'nhiêu', 'tiền', 'của', 'là', 'về', 'cái', 'nhé', 'nha', 'được', 
-                'hộ', 'giúp', 'xin', 'báo', 'xem', 'biết', 'các', 'những', 'một', 'số', 'bản', 'hệ'
-            ];
-
-            $keywords = array_filter($tokens, function ($token) use ($stopWords) {
-                return !in_array($token, $stopWords) && mb_strlen($token) >= 2;
-            });
-
-            if (!empty($keywords)) {
-                $productsQuery = Product::where('is_active', true);
-                foreach ($keywords as $keyword) {
-                    $productsQuery->where(function ($builder) use ($keyword) {
-                        $builder->where('name', 'like', "%{$keyword}%")
-                                ->orWhere('short_description', 'like', "%{$keyword}%");
-                    });
-                }
-                $matchedProducts = $productsQuery->take(5)->get();
-
-                if ($matchedProducts->count() === 1) {
-                    $targetProduct = $matchedProducts->first();
-                    
-                    $cart = \App\Models\Cart::firstOrCreate(['user_id' => $user->id]);
-                    $item = \App\Models\CartItem::firstOrNew([
-                        'cart_id' => $cart->id,
-                        'product_id' => $targetProduct->id,
-                    ]);
-                    $item->price = $targetProduct->price;
-                    $item->quantity = ($item->exists ? $item->quantity : 0) + 1;
-                    $item->save();
-
-                    $action = 'add_to_cart';
-                    $productId = $targetProduct->id;
-                    $productName = $targetProduct->name;
-                    $cartCount = $cart->items()->sum('quantity');
-
-                    $botReply = "Shop đã thêm game **{$targetProduct->name}** vào giỏ hàng của bạn thành công rồi nhé! Bạn có muốn [đến trang thanh toán](" . route('checkout.index') . ") luôn không?";
-                } elseif ($matchedProducts->count() > 1) {
-                    $botReply = "Tôi tìm thấy một số sản phẩm liên quan đến yêu cầu của bạn:\n\n";
-                    foreach ($matchedProducts as $index => $prod) {
-                        $url = route('products.show', $prod);
-                        $botReply .= ($index + 1) . ". **{$prod->name}** (" . strtoupper($prod->platform ?? 'N/A') . ") - [Xem chi tiết]({$url})\n";
-                    }
-                    $botReply .= "\nBạn muốn thêm tựa game nào trong số này vào giỏ hàng? Vui lòng nói tên cụ thể hơn nhé!";
-                } else {
-                    $botReply = "Shop không tìm thấy sản phẩm nào có tên khớp với yêu cầu của bạn để thêm vào giỏ hàng.";
-                }
-            } else {
-                $botReply = "Bạn muốn thêm game nào vào giỏ hàng ạ? Hãy nói tên game cụ thể để Shop tìm giúp nhé.";
-            }
-        } elseif (preg_match('/(?:thanh\s*toán|thanh\s*toan|đặt\s*hàng|dat\s*hang)/u', $lowerMessage)) {
-            $action = 'redirect';
-            $redirectUrl = route('checkout.index');
-            $botReply = "Dạ, Shop đang chuyển hướng bạn đến trang thanh toán trong giây lát...";
-        } elseif (preg_match('/(?:giỏ\s*hàng|gio\s*hang|mở\s*giỏ|mo\s*gio|xem\s*giỏ|xem\s*gio)/u', $lowerMessage)) {
-            $action = 'redirect';
-            $redirectUrl = route('cart.index');
-            $botReply = "Dạ, Shop đang mở trang giỏ hàng của bạn...";
-        }
 
         // Try using Google Gemini API first
         $apiKey = config('services.gemini.key');
-        if ($apiKey && !$botReply) {
+        if ($apiKey) {
             try {
                 $storeAddress = \App\Models\Setting::get('store_address', config('shipping.shop_address', 'Hà Nội'));
                 $storePhone = \App\Models\Setting::get('store_phone', '0123456789');
@@ -738,10 +654,6 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Tuyệt
                     'success' => true,
                     'user_message' => $userMessage,
                     'bot_message' => $botMessage,
-                    'action' => $action ?? null,
-                    'redirect_url' => $redirectUrl ?? null,
-                    'product_name' => $productName ?? null,
-                    'cart_count' => $cartCount ?? null,
                 ]);
             }
 
@@ -880,10 +792,6 @@ Hãy trả lời ngắn gọn, tập trung vào câu hỏi của khách. Tuyệt
             'success' => true,
             'user_message' => $userMessage,
             'bot_message' => $botMessage,
-            'action' => $action ?? null,
-            'redirect_url' => $redirectUrl ?? null,
-            'product_name' => $productName ?? null,
-            'cart_count' => $cartCount ?? null,
         ]);
     }
 
