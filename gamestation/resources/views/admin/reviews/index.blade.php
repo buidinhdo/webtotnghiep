@@ -26,7 +26,7 @@
             <tbody>
                 @forelse($reviews as $review)
                 <tr>
-                    <td>{{ $review->id }}</td>
+                    <td>{{ ($reviews->currentPage() - 1) * $reviews->perPage() + $loop->iteration }}</td>
                     <td>{{ $review->product->name ?? 'N/A' }}</td>
                     <td>{{ $review->user->name ?? 'N/A' }}</td>
                     <td>
