@@ -164,10 +164,17 @@
                     </a>
                 @endauth
 
-                <a href="{{ route('cart.index') }}" class="gs-icon-button" aria-label="{{ __('ui.cart') }}">
+                @php
+                    $cartCount = 0;
+                    if (Auth::check()) {
+                        $cartCount = Auth::user()->cart ? Auth::user()->cart->items()->sum('quantity') : 0;
+                    }
+                @endphp
+                <a href="{{ route('cart.index') }}" class="gs-icon-button relative" aria-label="{{ __('ui.cart') }}" id="nav-cart-btn">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.6 3M7 13h10l3-7H6.6M7 13l-1.5 7h13L17 13M7 13h10" />
                     </svg>
+                    <span id="nav-cart-count" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white transition-all {{ $cartCount > 0 ? '' : 'hidden' }}">{{ $cartCount }}</span>
                 </a>
                 @auth
                     <!-- Lucky Spin Icon Button -->

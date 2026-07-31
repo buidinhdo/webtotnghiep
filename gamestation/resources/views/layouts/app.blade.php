@@ -281,6 +281,23 @@
                             .then(data => {
                                 if (data.success) {
                                     this.fetchMessages();
+
+                                    // Handle AI Voice/Text Shopping Actions
+                                    if (data.action === 'redirect') {
+                                        setTimeout(() => {
+                                            window.location.href = data.redirect_url;
+                                        }, 1500);
+                                    } else if (data.action === 'add_to_cart') {
+                                        const badge = document.getElementById('nav-cart-count');
+                                        if (badge) {
+                                            badge.innerText = data.cart_count;
+                                            badge.classList.remove('hidden');
+                                            badge.classList.add('animate-bounce');
+                                            setTimeout(() => {
+                                                badge.classList.remove('animate-bounce');
+                                            }, 1000);
+                                        }
+                                    }
                                 }
                                 this.loading = false;
                             })
