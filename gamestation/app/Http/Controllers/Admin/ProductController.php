@@ -52,6 +52,7 @@ class ProductController extends Controller
             ->when(!empty($esrb), function ($query) use ($esrb) {
                 $query->where('esrb', $esrb);
             })
+            ->latest()
             ->paginate(15)
             ->appends(request()->query());
 
