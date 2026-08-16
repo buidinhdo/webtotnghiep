@@ -33,36 +33,6 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Validate the user credentials without logging them in immediately.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    public function validateCredentials(): \App\Models\User
-    {
-        $this->ensureIsNotRateLimited();
-
-        $user = \App\Models\User::where('email', $this->email)->first();
-
-        if (! $user || ! \Illuminate\Support\Facades\Hash::check($this->password, $user->password)) {
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
-        }
-
-        if (! $user->is_active) {
-            throw ValidationException::withMessages([
-                'email' => 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.',
-            ]);
-        }
-
-        RateLimiter::clear($this->throttleKey());
-
-        return $user;
-    }
-
-    /**
      * Attempt to authenticate the request's credentials.
      *
      * @throws \Illuminate\Validation\ValidationException

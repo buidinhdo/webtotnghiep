@@ -2,11 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Mail\LoginOtpMail;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -20,91 +18,17 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_admin_can_authenticate_directly_without_otp(): void
+    public function test_users_can_authenticate_using_the_login_screen(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-        ]);
-
-        $response = $this->post('/login', [
-            'email' => $admin->email,
-            'password' => 'password',
-        ]);
-
-        $this->assertAuthenticatedAs($admin);
-        $response->assertRedirect('/admin/dashboard');
-    }
-
-    public function test_regular_user_is_redirected_to_otp_screen_and_email_sent(): void
-    {
-        Mail::fake();
-
-        $user = User::factory()->create([
-            'is_admin' => false,
-        ]);
+        $user = User::factory()->create();
 
         $response = $this->post('/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);
 
-        $this->assertGuest();
-        $response->assertRedirect(route('login.otp'));
-        $response->assertSessionHas('login_otp');
-
-        Mail::assertSent(LoginOtpMail::class, function ($mail) use ($user) {
-            return $mail->hasTo($user->email);
-        });
-    }
-
-    public function test_regular_user_can_authenticate_with_valid_otp(): void
-    {
-        $user = User::factory()->create([
-            'is_admin' => false,
-        ]);
-
-        $otpCode = '123456';
-
-        $sessionData = [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'code' => $otpCode,
-            'remember' => false,
-            'expires_at' => now()->addMinutes(5)->timestamp,
-            'last_sent_at' => now()->timestamp,
-        ];
-
-        $response = $this->withSession(['login_otp' => $sessionData])
-            ->post('/login/otp', [
-                'otp' => $otpCode,
-            ]);
-
-        $this->assertAuthenticatedAs($user);
+        $this->assertAuthenticated();
         $response->assertRedirect(RouteServiceProvider::HOME);
-    }
-
-    public function test_regular_user_cannot_authenticate_with_invalid_otp(): void
-    {
-        $user = User::factory()->create([
-            'is_admin' => false,
-        ]);
-
-        $sessionData = [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'code' => '123456',
-            'remember' => false,
-            'expires_at' => now()->addMinutes(5)->timestamp,
-            'last_sent_at' => now()->timestamp,
-        ];
-
-        $response = $this->withSession(['login_otp' => $sessionData])
-            ->post('/login/otp', [
-                'otp' => '654321',
-            ]);
-
-        $this->assertGuest();
-        $response->assertSessionHasErrors('otp');
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
