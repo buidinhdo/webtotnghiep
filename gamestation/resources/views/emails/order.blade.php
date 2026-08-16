@@ -35,7 +35,11 @@
             </p>
             <p><strong>Trạng thái thanh toán:</strong> 
                 <span style="color: {{ $order->payment_status === 'paid' ? '#16a34a' : '#ea580c' }}; font-weight: bold;">
-                    {{ $order->payment_status === 'paid' ? 'Đã thanh toán thành công' : 'Chưa thanh toán (COD)' }}
+                    @if ($order->payment_status === 'paid')
+                        Đã thanh toán thành công
+                    @else
+                        {{ $order->payment_method === 'credit_card' ? 'Chưa thanh toán' : 'Chưa thanh toán (COD)' }}
+                    @endif
                 </span>
             </p>
             <p><strong>Trạng thái đơn hàng:</strong> 
