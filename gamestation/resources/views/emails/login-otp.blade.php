@@ -119,10 +119,6 @@
                     <div class="otp-code">{{ $otp }}</div>
                     <p class="expiry-note">⏱️ Mã có hiệu lực trong vòng <strong>{{ $expiresMinutes }} phút</strong></p>
                 </div>
-
-                <div class="warning-box">
-                    <strong>⚠️ Lưu ý bảo mật:</strong> Tuyệt đối không chia sẻ mã này cho bất kỳ ai, kể cả nhân viên hỗ trợ GameStation. Nếu bạn không thực hiện yêu cầu này, hãy đổi mật khẩu ngay lập tức.
-                </div>
             </div>
             
             <div class="footer">
