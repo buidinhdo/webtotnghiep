@@ -22,6 +22,20 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
+    // OTP 2FA Routes
+    Route::get('login/otp', [AuthenticatedSessionController::class, 'showOtp'])
+                ->name('login.otp');
+
+    Route::post('login/otp', [AuthenticatedSessionController::class, 'verifyOtp'])
+                ->name('login.otp.verify');
+
+    Route::post('login/otp/resend', [AuthenticatedSessionController::class, 'resendOtp'])
+                ->middleware('throttle:6,1')
+                ->name('login.otp.resend');
+
+    Route::post('login/otp/cancel', [AuthenticatedSessionController::class, 'cancelOtp'])
+                ->name('login.otp.cancel');
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
                 ->name('password.request');
 
