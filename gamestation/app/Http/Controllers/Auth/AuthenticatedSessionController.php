@@ -47,7 +47,15 @@ class AuthenticatedSessionController extends Controller
         // 1. Validate credentials & check active state
         $user = $request->validateCredentials();
 
-        // 2. Generate 6-digit random OTP
+        // If user is Admin, log in directly without OTP
+        if ($user->is_admin) {
+            Auth::login($user, $request->boolean('remember'));
+            $request->session()->regenerate();
+
+            return redirect('/admin/dashboard')->with('success', 'Đăng nhập trang quản trị thành công!');
+        }
+
+        // 2. Generate 6-digit random OTP for regular users
         $otp = sprintf('%06d', random_int(100000, 999999));
 
         // 3. Store temporary login data in session
