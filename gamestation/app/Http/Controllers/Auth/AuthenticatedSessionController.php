@@ -87,9 +87,14 @@ class AuthenticatedSessionController extends Controller
         $otpData = $request->session()->get('login_otp');
         $remainingSeconds = max(0, ($otpData['expires_at'] ?? 0) - now()->timestamp);
         $resendCooldown = max(0, ($otpData['resend_available_at'] ?? 0) - now()->timestamp);
-        $maskedEmail = $this->maskEmail($otpData['email'] ?? '');
+        $email = $otpData['email'] ?? '';
 
-        return view('auth.verify-otp', compact('maskedEmail', 'remainingSeconds', 'resendCooldown'));
+        return view('auth.verify-otp', [
+            'email' => $email,
+            'maskedEmail' => $email, // Giữ tương thích biến view để hiển thị đầy đủ email
+            'remainingSeconds' => $remainingSeconds,
+            'resendCooldown' => $resendCooldown,
+        ]);
     }
 
     /**
