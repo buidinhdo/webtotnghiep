@@ -232,151 +232,137 @@
                 };
             }
 
+            function populateProvinces(data) {
+                provincesData = data;
+                provinceSelect.innerHTML = '<option value="">-- Chọn Tỉnh / Thành phố --</option>';
+                data.forEach(p => {
+                    provinceSelect.innerHTML += `<option value="${p.name}" data-code="${p.code}">${p.name}</option>`;
+                });
+                
+                autoPrefillAddress();
+            }
+
             function autoPrefillAddress() {
                 if (!prefillData) return;
                 
-                detailInput.value = prefillData.detail;
+                if (prefillData.detail) {
+                    detailInput.value = prefillData.detail;
+                }
                 
-                const provinceOption = Array.from(provinceSelect.options).find(opt => opt.value === prefillData.province);
-                if (provinceOption) {
-                    provinceSelect.value = prefillData.province;
-                    
-                    const code = provinceOption.getAttribute('data-code');
-                    if (code) {
-                        districtSelect.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
-                        fetch(`https://provinces.open-api.vn/api/p/${code}?depth=2`)
-                            .then(res => res.json())
-                            .then(data => {
-                                districtSelect.removeAttribute('disabled');
-                                data.districts.forEach(d => {
-                                    districtSelect.innerHTML += `<option value="${d.name}" data-code="${d.code}">${d.name}</option>`;
-                                });
-                                
+                if (prefillData.province) {
+                    const provinceOption = Array.from(provinceSelect.options).find(opt => opt.value === prefillData.province);
+                    if (provinceOption) {
+                        provinceSelect.value = prefillData.province;
+                        
+                        const pData = provincesData.find(p => String(p.code) === String(provinceOption.getAttribute('data-code')) || p.name === prefillData.province);
+                        if (pData && pData.districts) {
+                            districtSelect.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+                            districtSelect.removeAttribute('disabled');
+                            pData.districts.forEach(d => {
+                                districtSelect.innerHTML += `<option value="${d.name}" data-code="${d.code}">${d.name}</option>`;
+                            });
+
+                            if (prefillData.district) {
                                 const districtOption = Array.from(districtSelect.options).find(opt => opt.value === prefillData.district);
                                 if (districtOption) {
                                     districtSelect.value = prefillData.district;
-                                    
-                                    const dCode = districtOption.getAttribute('data-code');
-                                    if (dCode) {
+
+                                    const dData = pData.districts.find(d => String(d.code) === String(districtOption.getAttribute('data-code')) || d.name === prefillData.district);
+                                    if (dData && dData.wards) {
                                         wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
-                                        fetch(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
-                                            .then(res => res.json())
-                                            .then(data => {
-                                                wardSelect.removeAttribute('disabled');
-                                                data.wards.forEach(w => {
-                                                    wardSelect.innerHTML += `<option value="${w.name}" data-code="${w.code}">${w.name}</option>`;
-                                                });
-                                                
-                                                const wardOption = Array.from(wardSelect.options).find(opt => opt.value === prefillData.ward);
-                                                if (wardOption) {
-                                                    wardSelect.value = prefillData.ward;
-                                                }
-                                                
-                                                calculateShipping();
-                                            });
+                                        wardSelect.removeAttribute('disabled');
+                                        dData.wards.forEach(w => {
+                                            wardSelect.innerHTML += `<option value="${w.name}" data-code="${w.code}">${w.name}</option>`;
+                                        });
+
+                                        if (prefillData.ward) {
+                                            wardSelect.value = prefillData.ward;
+                                        }
                                     }
                                 }
-                            });
+                            }
+                        }
                     }
                 }
-            }
-
-            // Load Provinces
-            fetch('https://provinces.open-api.vn/api/p/')
-                .then(res => res.json())
-                .then(data => {
-                    provincesData = data;
-                    provinceSelect.innerHTML = '<option value="">-- Chọn Tỉnh / Thành phố --</option>';
-                    data.forEach(p => {
-                        provinceSelect.innerHTML += `<option value="${p.name}" data-code="${p.code}">${p.name}</option>`;
-                    });
-                    
-                    autoPrefillAddress();
-                })
-                .catch(err => {
-                    console.error('Lỗi khi tải danh sách tỉnh thành:', err);
-                    fallbackToTextInput();
-                });
-
-            function fallbackToTextInput() {
-                const parentProvince = provinceSelect.parentElement;
-                parentProvince.innerHTML = `
-                    <label class="text-sm font-semibold text-slate-700">Tỉnh / Thành phố <span class="text-red-600">*</span></label>
-                    <input type="text" name="province" id="province_input_text" class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-2" required placeholder="Nhập Tỉnh / Thành phố" />
-                `;
-                const parentDistrict = districtSelect.parentElement;
-                parentDistrict.innerHTML = `
-                    <label class="text-sm font-semibold text-slate-700">Quận / Huyện <span class="text-red-600">*</span></label>
-                    <input type="text" name="district" id="district_input_text" class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-2" required placeholder="Nhập Quận / Huyện" />
-                `;
-                const parentWard = wardSelect.parentElement;
-                parentWard.innerHTML = `
-                    <label class="text-sm font-semibold text-slate-700">Phường / Xã <span class="text-red-600">*</span></label>
-                    <input type="text" name="ward" id="ward_input_text" class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-2" required placeholder="Nhập Phường / Xã" />
-                `;
-
-                if (prefillData) {
-                    document.getElementById('province_input_text').value = prefillData.province;
-                    document.getElementById('district_input_text').value = prefillData.district;
-                    document.getElementById('ward_input_text').value = prefillData.ward;
-                    detailInput.value = prefillData.detail;
-                }
-
-                document.getElementById('province_input_text').addEventListener('input', debounce(calculateShipping, 500));
-                document.getElementById('district_input_text').addEventListener('input', debounce(calculateShipping, 500));
-                document.getElementById('ward_input_text').addEventListener('input', debounce(calculateShipping, 500));
-
                 calculateShipping();
             }
 
-            // Load Districts
+            // Load Provinces from local static JSON (fast, reliable, offline-ready)
+            fetch('{{ asset("data/vietnam-provinces.json") }}')
+                .then(res => {
+                    if (!res.ok) throw new Error('Local JSON error');
+                    return res.json();
+                })
+                .then(data => {
+                    populateProvinces(data);
+                })
+                .catch(err => {
+                    console.warn('Loading local provinces JSON failed, trying online API:', err);
+                    fetch('https://provinces.open-api.vn/api/?depth=3')
+                        .then(res => res.json())
+                        .then(data => {
+                            populateProvinces(data);
+                        })
+                        .catch(apiErr => {
+                            console.error('All province sources failed:', apiErr);
+                        });
+                });
+
+            // Load Districts when Province changes
             provinceSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                const code = selectedOption.getAttribute('data-code');
+                const code = selectedOption ? selectedOption.getAttribute('data-code') : null;
+                const provinceName = this.value;
                 
                 districtSelect.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
                 districtSelect.setAttribute('disabled', 'disabled');
                 wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
                 wardSelect.setAttribute('disabled', 'disabled');
 
-                if (!code) {
+                if (!provinceName) {
                     calculateShipping();
                     return;
                 }
 
-                fetch(`https://provinces.open-api.vn/api/p/${code}?depth=2`)
-                    .then(res => res.json())
-                    .then(data => {
-                        districtSelect.removeAttribute('disabled');
-                        data.districts.forEach(d => {
-                            districtSelect.innerHTML += `<option value="${d.name}" data-code="${d.code}">${d.name}</option>`;
-                        });
+                const pData = provincesData.find(p => (code && String(p.code) === String(code)) || p.name === provinceName);
+                if (pData && pData.districts && pData.districts.length > 0) {
+                    districtSelect.removeAttribute('disabled');
+                    pData.districts.forEach(d => {
+                        districtSelect.innerHTML += `<option value="${d.name}" data-code="${d.code}">${d.name}</option>`;
                     });
+                }
                 
                 calculateShipping();
             });
 
-            // Load Wards
+            // Load Wards when District changes
             districtSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                const code = selectedOption.getAttribute('data-code');
+                const code = selectedOption ? selectedOption.getAttribute('data-code') : null;
+                const districtName = this.value;
 
                 wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
                 wardSelect.setAttribute('disabled', 'disabled');
 
-                if (!code) {
+                if (!districtName) {
                     calculateShipping();
                     return;
                 }
 
-                fetch(`https://provinces.open-api.vn/api/d/${code}?depth=2`)
-                    .then(res => res.json())
-                    .then(data => {
+                const selectedProvinceOption = provinceSelect.options[provinceSelect.selectedIndex];
+                const pCode = selectedProvinceOption ? selectedProvinceOption.getAttribute('data-code') : null;
+                const pName = provinceSelect.value;
+                const pData = provincesData.find(p => (pCode && String(p.code) === String(pCode)) || p.name === pName);
+
+                if (pData && pData.districts) {
+                    const dData = pData.districts.find(d => (code && String(d.code) === String(code)) || d.name === districtName);
+                    if (dData && dData.wards && dData.wards.length > 0) {
                         wardSelect.removeAttribute('disabled');
-                        data.wards.forEach(w => {
+                        dData.wards.forEach(w => {
                             wardSelect.innerHTML += `<option value="${w.name}" data-code="${w.code}">${w.name}</option>`;
                         });
-                    });
+                    }
+                }
                 
                 calculateShipping();
             });
